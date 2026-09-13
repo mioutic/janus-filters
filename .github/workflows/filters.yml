@@ -192,7 +192,11 @@ jobs:
           fi
           xcodebuild -version
           swift --version
-          major="$(xcodebuild -version | head -1 | sed -E 's/Xcode ([0-9]+).*/\1/')"
+          # `| head -1` closes the pipe while xcodebuild is still writing, and
+          # xcodebuild turns the SIGPIPE into an uncaught NSFileHandleOperationException
+          # and aborts (exit 134). It is a race, so it passes most runs and fails some.
+          # awk reads to EOF, so nothing ever closes the pipe early.
+          major="$(xcodebuild -version | awk 'NR == 1 { print $2 }' | cut -d. -f1)"
           if [ "${major}" -lt 26 ]; then
             echo "::error::Xcode ${major} is too old; the pinned toolchain is 26.6"
             exit 3
