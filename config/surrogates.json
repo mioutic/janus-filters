@@ -64,7 +64,7 @@
       "sha256": "c02d04af9ae0e41059ec9a9773a124618df592379ef2dd63a9532bc3eeadc0a1",
       "mime": "text/javascript",
       "patterns": [
-        "/prebid[0-9a-z._\\-]*\\.js"
+        "/prebid[0-9a-z._-]*\\.js"
       ],
       "resourceTypes": ["script"],
       "globals": ["pbjs"],
@@ -76,8 +76,8 @@
       "sha256": "9f487a052b25ce116e8f5d8e3f3b1bb0ed5b6b5232462c3b279c18cfd324b027",
       "mime": "text/xml",
       "patterns": [
-        "^https?://[a-z0-9.\\-]*\\.g\\.doubleclick\\.net/gampad/ads.*output=xml_vast",
-        "^https?://[a-z0-9.\\-]*\\.g\\.doubleclick\\.net/gampad/ads.*output=vast"
+        "^https?://[a-z0-9.-]*\\.g\\.doubleclick\\.net/gampad/ads.*output=xml_vast",
+        "^https?://[a-z0-9.-]*\\.g\\.doubleclick\\.net/gampad/ads.*output=vast"
       ],
       "resourceTypes": ["raw"],
       "globals": [],
@@ -89,8 +89,8 @@
       "sha256": "55eaf9ee8c1e1c35ebe1f5f7b5583f2789518af461ac2b7eac36cff71e3222a2",
       "mime": "text/xml",
       "patterns": [
-        "^https?://[a-z0-9.\\-]*\\.g\\.doubleclick\\.net/gampad/ads.*output=vmap",
-        "^https?://[a-z0-9.\\-]*\\.g\\.doubleclick\\.net/gampad/live/ads.*output=vmap"
+        "^https?://[a-z0-9.-]*\\.g\\.doubleclick\\.net/gampad/ads.*output=vmap",
+        "^https?://[a-z0-9.-]*\\.g\\.doubleclick\\.net/gampad/live/ads.*output=vmap"
       ],
       "resourceTypes": ["raw"],
       "globals": [],
@@ -102,8 +102,8 @@
       "sha256": "a27edba0e34b2648a90a800ae94fdef3e39016d1b9bd6e54a31ede1f1cddfed0",
       "mime": "video/mp4",
       "patterns": [
-        "^https?://[a-z0-9.\\-]*\\.2mdn\\.net/.*\\.mp4",
-        "^https?://[a-z0-9.\\-]*\\.doubleclick\\.net/.*\\.mp4"
+        "^https?://[a-z0-9.-]*\\.2mdn\\.net/.*\\.mp4",
+        "^https?://[a-z0-9.-]*\\.doubleclick\\.net/.*\\.mp4"
       ],
       "resourceTypes": ["media"],
       "globals": [],

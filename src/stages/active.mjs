@@ -26,6 +26,7 @@ import {
   writeLines,
 } from "../lib/io.mjs";
 import { parseRule } from "../lib/rule.mjs";
+import { assertWebKitRegex } from "../lib/webkit-regex.mjs";
 import { normaliseHost } from "../lib/psl.mjs";
 import { ACTIVE_BUCKET_ID } from "../lib/ctx.mjs";
 import { sha256hex } from "../lib/hash.mjs";
@@ -137,6 +138,15 @@ export async function run(ctx) {
   const config = await ctx.config.surrogates();
   const surrogates = config.surrogates ?? [];
   if (surrogates.length === 0) throw policyError("config/surrogates.json lists no surrogates");
+
+  // Our own patterns go to the converter verbatim, and it reports a rejected
+  // one only as an error count, so check them here where the message can name
+  // the surrogate and the pattern.
+  for (const surrogate of surrogates) {
+    for (const pattern of surrogate.patterns ?? []) {
+      assertWebKitRegex(pattern, { surrogate: surrogate.id });
+    }
+  }
 
   const candidates = (await readJsonl(ctx.paths.surrogateCandidates)) ?? [];
   const byId = new Map(surrogates.map((surrogate) => [surrogate.id, surrogate]));
