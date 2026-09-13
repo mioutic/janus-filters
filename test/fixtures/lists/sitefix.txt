@@ -1,0 +1,4 @@
+! Title: Fixture Janus site-fix list
+reddit.com##shreddit-ad-post
+gofile.io##.ads
+||ads.sitefix.example^

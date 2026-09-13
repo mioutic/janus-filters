@@ -1,0 +1,48 @@
+{
+  "name": "janus-filters",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Builds signed, compile-validated WebKit content-blocking bundles for the Janus browser from public filter lists.",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0 <25"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mioutic/janus-filters.git"
+  },
+  "homepage": "https://github.com/mioutic/janus-filters",
+  "bugs": {
+    "url": "https://github.com/mioutic/janus-filters/issues"
+  },
+  "bin": {
+    "janus-filters": "src/cli.mjs"
+  },
+  "scripts": {
+    "build": "node src/cli.mjs build",
+    "fetch": "node src/cli.mjs fetch",
+    "preprocess": "node src/cli.mjs preprocess",
+    "trustgate": "node src/cli.mjs trustgate",
+    "translate": "node src/cli.mjs translate",
+    "bucket": "node src/cli.mjs bucket",
+    "active": "node src/cli.mjs active",
+    "report": "node src/cli.mjs report",
+    "pack": "node src/cli.mjs pack",
+    "pack:prepare": "node src/stages/pack.mjs --prepare-payloads",
+    "sign": "node src/cli.mjs sign",
+    "verify": "node src/cli.mjs verify",
+    "dry-run": "node src/cli.mjs build --offline --lists test/fixtures/lists/lists.json",
+    "dry-run:live": "node src/cli.mjs build",
+    "test": "node --test --experimental-test-coverage \"test/**/*.test.mjs\"",
+    "pin-check": "node scripts/pin-check.mjs",
+    "notice": "node scripts/gen-notice.mjs --write",
+    "notice:check": "node scripts/gen-notice.mjs --check",
+    "alias": "node scripts/gen-alias.mjs --write",
+    "alias:check": "node scripts/gen-alias.mjs --check",
+    "ci:check": "npm test && npm run pin-check && npm run alias:check && npm run notice:check && npm run dry-run"
+  },
+  "dependencies": {
+    "@adguard/scriptlets": "2.5.1"
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "note": "PIPELINE 11.2 and DESIGN 3.6. Order is normative: the pack stage emits every redirect rule in this order, then every fallback block rule in the same order, with no ignore-previous-rules between the two sections. resourceTypes never contains document, top-document, child-document or image. Patterns are WebKit url-filter regexes: no non-capturing groups, no {n,m} quantifiers, no lookaround - only what WKContentRuleListStore accepts.",
+  "redirectSource": {
+    "package": "@adguard/scriptlets",
+    "version": "2.5.1",
+    "dir": "dist/redirect-files"
+  },
+  "surrogates": [
+    {
+      "id": "google-ima3",
+      "file": "google-ima3.js",
+      "sha256": "204ab95a131deffe50f48f977948c7e237e0a270d32c211ed7cd3c763ee545c7",
+      "mime": "text/javascript",
+      "patterns": [
+        "^https?://imasdk\\.googleapis\\.com/js/sdkloader/ima3\\.js",
+        "^https?://s0\\.2mdn\\.net/instream/html5/ima3\\.js"
+      ],
+      "resourceTypes": ["script"],
+      "globals": ["google"],
+      "notes": "IMA SDK. The surrogate defines google.ima with stub AdsLoader/AdsManager so the player reports 'no ad' instead of hanging."
+    },
+    {
+      "id": "googletagservices-gpt",
+      "file": "googletagservices-gpt.js",
+      "sha256": "af03bdce9374b739fd2a6f6613d74653f8d1f0f1d2ee7d8917beb004bc03ea9b",
+      "mime": "text/javascript",
+      "patterns": [
+        "^https?://securepubads\\.g\\.doubleclick\\.net/tag/js/gpt\\.js",
+        "^https?://pagead2\\.googlesyndication\\.com/tag/js/gpt\\.js",
+        "^https?://www\\.googletagservices\\.com/tag/js/gpt\\.js"
+      ],
+      "resourceTypes": ["script"],
+      "globals": ["googletag"],
+      "notes": "Google Publisher Tag. Without the surrogate, pages that queue googletag.cmd callbacks never render their content."
+    },
+    {
+      "id": "googlesyndication-adsbygoogle",
+      "file": "googlesyndication-adsbygoogle.js",
+      "sha256": "2b009a2e432009a224ee8065036c40ee3abb751474617b16a983a6836f86ee21",
+      "mime": "text/javascript",
+      "patterns": [
+        "^https?://pagead2\\.googlesyndication\\.com/pagead/js/adsbygoogle\\.js"
+      ],
+      "resourceTypes": ["script"],
+      "globals": ["adsbygoogle"],
+      "notes": "AdSense loader. The surrogate keeps the adsbygoogle push queue alive and collapses the slots."
+    },
+    {
+      "id": "amazon-apstag",
+      "file": "amazon-apstag.js",
+      "sha256": "6d4bcf2a273911439dcf3bb247b7acd71d02f1d3ca8b1bedc59ad3b1960bc97b",
+      "mime": "text/javascript",
+      "patterns": [
+        "^https?://c\\.amazon-adsystem\\.com/aax2/apstag\\.js"
+      ],
+      "resourceTypes": ["script"],
+      "globals": ["apstag"],
+      "notes": "Amazon TAM header bidding. fetchBids calls back with an empty array, so the page's auction finishes."
+    },
+    {
+      "id": "prebid",
+      "file": "prebid.js",
+      "sha256": "c02d04af9ae0e41059ec9a9773a124618df592379ef2dd63a9532bc3eeadc0a1",
+      "mime": "text/javascript",
+      "patterns": [
+        "/prebid[0-9a-z._\\-]*\\.js"
+      ],
+      "resourceTypes": ["script"],
+      "globals": ["pbjs"],
+      "notes": "Prebid.js is self-hosted, so the pattern is path-based like uBO's /prebid*.js. Deliberately unanchored; the fallback block covers what the redirect misses."
+    },
+    {
+      "id": "noopvast-4.0",
+      "file": "noopvast04.xml",
+      "sha256": "9f487a052b25ce116e8f5d8e3f3b1bb0ed5b6b5232462c3b279c18cfd324b027",
+      "mime": "text/xml",
+      "patterns": [
+        "^https?://[a-z0-9.\\-]*\\.g\\.doubleclick\\.net/gampad/ads.*output=xml_vast",
+        "^https?://[a-z0-9.\\-]*\\.g\\.doubleclick\\.net/gampad/ads.*output=vast"
+      ],
+      "resourceTypes": ["raw"],
+      "globals": [],
+      "notes": "Empty VAST 4 document. resource-type raw is the WebKit type for XHR and fetch in both the iOS 17 and iOS 26 flavours. Scoped to output=vast so it cannot pre-empt the VMAP surrogate, which is emitted after it."
+    },
+    {
+      "id": "noopvmap-1.0",
+      "file": "noopvmap01.xml",
+      "sha256": "55eaf9ee8c1e1c35ebe1f5f7b5583f2789518af461ac2b7eac36cff71e3222a2",
+      "mime": "text/xml",
+      "patterns": [
+        "^https?://[a-z0-9.\\-]*\\.g\\.doubleclick\\.net/gampad/ads.*output=vmap",
+        "^https?://[a-z0-9.\\-]*\\.g\\.doubleclick\\.net/gampad/live/ads.*output=vmap"
+      ],
+      "resourceTypes": ["raw"],
+      "globals": [],
+      "notes": "Empty VMAP 1.0 document, for the ad-break schedule a live player asks for before any VAST."
+    },
+    {
+      "id": "noopmp4-1s",
+      "file": "noopmp4.mp4",
+      "sha256": "a27edba0e34b2648a90a800ae94fdef3e39016d1b9bd6e54a31ede1f1cddfed0",
+      "mime": "video/mp4",
+      "patterns": [
+        "^https?://[a-z0-9.\\-]*\\.2mdn\\.net/.*\\.mp4",
+        "^https?://[a-z0-9.\\-]*\\.doubleclick\\.net/.*\\.mp4"
+      ],
+      "resourceTypes": ["media"],
+      "globals": [],
+      "notes": "One-second silent MP4 for creative video. A blocked media response leaves some players waiting; a one-second clip makes them advance to the content."
+    }
+  ]
+}

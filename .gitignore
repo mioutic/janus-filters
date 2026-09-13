@@ -1,0 +1,30 @@
+# Generated trees. build/ is the only output of the pipeline and is never committed:
+# it holds fetched upstream list bodies, converted buckets and the signed bundle.
+/build/
+/node_modules/
+/_site/
+/dist/
+
+# Swift build products (the two macOS-only tools). Package.resolved IS committed.
+Tools/*/.build/
+.swiftpm/
+DerivedData/
+*.xcuserstate
+
+# Key material must never be committed. The signing key lives only in the
+# GitHub environment secret JANUS_FILTER_SIGNING_KEY.
+*.pem
+*.p8
+*.key
+*.der
+.env
+.env.*
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.idea/
+.vscode/

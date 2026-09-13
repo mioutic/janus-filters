@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "item": "CONTRACT 14.4 flavour selection",
+  "note": "Chosen from the running iOS major version, never from the build SDK.",
+  "vectors": [
+    {
+      "iosMajor": 17,
+      "flavour": "ios17"
+    },
+    {
+      "iosMajor": 18,
+      "flavour": "ios17"
+    },
+    {
+      "iosMajor": 25,
+      "flavour": "ios17"
+    },
+    {
+      "iosMajor": 26,
+      "flavour": "ios26"
+    },
+    {
+      "iosMajor": 27,
+      "flavour": "ios26"
+    }
+  ],
+  "mustThrow": [
+    16,
+    0,
+    -1
+  ]
+}

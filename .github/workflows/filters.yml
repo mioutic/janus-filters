@@ -1,0 +1,684 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Daily filter build (PIPELINE section 17.1).
+#
+#   prepare (ubuntu)  fetch .. active, report, tests, pins      no secrets
+#   convert (macOS)   SafariConverterLib, WebKit compile, LZFSE no secrets
+#   publish (ubuntu)  pack, sign, draft release, verify, undraft
+#                     environment: filters-release, main only
+#   pages   (ubuntu)  byte-identical mirror; failure is a warning
+#
+# Only `publish` can see JANUS_FILTER_SIGNING_KEY, and only in the one step that
+# signs. No job that executes third-party filter content holds a secret.
+
+name: filters
+
+on:
+  schedule:
+    # 04:17 UTC daily. Off the hour so we are not competing with every other cron.
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish a release (uncheck for a dry build)"
+        type: boolean
+        default: true
+      flavours:
+        description: "Comma-separated flavours to build"
+        type: string
+        default: "ios17,ios26"
+      lists:
+        description: "Optional comma-separated list ids, for debugging"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  # A publish must never be cancelled between uploading assets and undrafting.
+  group: filters-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "24"
+  FLAVOURS: ${{ inputs.flavours || 'ios17,ios26' }}
+
+jobs:
+  prepare:
+    name: prepare (ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Cache npm
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: npm-
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Check pins, generated files and hygiene
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/pin-check.mjs --online
+          npm run notice:check
+
+      - name: Cache scope for today
+        id: cachescope
+        run: echo "key=filters-cache-$(date -u +%Y%m%d)-${{ hashFiles('lists.json') }}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore filter-body cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/cache
+          # Keyed on the UTC day and the list set, never on the run id: a key that
+          # can hit is refreshed in place, while a per-run key writes a new ~200 MB
+          # entry every night and evicts the npm and SwiftPM caches it shares the
+          # repository's 10 GB budget with.
+          key: ${{ steps.cachescope.outputs.key }}
+          restore-keys: filters-cache-
+
+      - name: Fetch the previously published manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          mkdir -p build
+          url="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/manifest.json"
+          if curl -fsSL --retry 5 --retry-delay 5 -o build/previous-manifest.json "$url"; then
+            echo "previous version: $(node -e 'console.log(JSON.parse(require("node:fs").readFileSync("build/previous-manifest.json","utf8")).version)')"
+            exit 0
+          fi
+          rm -f build/previous-manifest.json
+          # CONTRACT 7.1 promises version > previousPublishedVersion. Starting from
+          # zero because a download failed would publish an OLDER version and move
+          # releases/latest backwards, so only a genuine "no releases yet" may pass.
+          if gh api "repos/${GITHUB_REPOSITORY}/releases/latest" >/dev/null 2>&1; then
+            echo "::error::a release exists but its manifest could not be downloaded; refusing to compute a version from nothing"
+            exit 1
+          fi
+          echo "no published release yet; this run builds the first bundle"
+
+      - name: Build (fetch, preprocess, trust gate, translate, bucket, active, report)
+        run: |
+          if [ -n "${LISTS}" ]; then
+            node src/cli.mjs build --only "${LISTS}"
+          else
+            node src/cli.mjs build
+          fi
+        env:
+          LISTS: ${{ inputs.lists }}
+
+      - name: Budget summary
+        if: always()
+        run: |
+          if [ -f build/reports/budget.json ]; then
+            {
+              echo "### Bucket budgets"
+              echo ""
+              echo '```json'
+              cat build/reports/budget.json
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload converter inputs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: janus-filters-input-${{ github.run_id }}
+          # build/raw and the full prepared/trusted/xlated texts are deliberately
+          # absent: large, public upstream, and the provenance file already ties
+          # every rule to a list and a line. The small per-list sidecars travel,
+          # because the convert job re-runs `report` and the publish job packs
+          # per-list rule counts out of them (PIPELINE 14, 15).
+          path: |
+            build/buckets/
+            build/auxdata/
+            build/prepared/*.stats.json
+            build/trusted/*.gate.json
+            build/xlated/*.xlate.json
+            build/merged.provenance.jsonl
+            build/previous-manifest.json
+            config/
+          if-no-files-found: error
+          retention-days: 14
+
+  convert:
+    name: convert (macOS)
+    runs-on: macos-26
+    needs: prepare
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+
+      - name: Select and report the toolchain
+        run: |
+          if [ -d /Applications/Xcode_26.6.app ]; then
+            sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+          fi
+          xcodebuild -version
+          swift --version
+          major="$(xcodebuild -version | head -1 | sed -E 's/Xcode ([0-9]+).*/\1/')"
+          if [ "${major}" -lt 26 ]; then
+            echo "::error::Xcode ${major} is too old; the pinned toolchain is 26.6"
+            exit 3
+          fi
+
+      - name: Download converter inputs
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: janus-filters-input-${{ github.run_id }}
+
+      - name: Check the input tree
+        run: |
+          set -euo pipefail
+          for required in build/buckets/index.json build/auxdata/killswitches.json config/buckets.json; do
+            if [ ! -f "${required}" ]; then
+              echo "::error::${required} is missing: the converter-inputs artifact did not unpack at the workspace root"
+              exit 1
+            fi
+          done
+
+      - name: Cache SwiftPM
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm
+          key: spm-${{ runner.os }}-${{ hashFiles('Tools/**/Package.resolved') }}-xcode26.6
+          restore-keys: spm-${{ runner.os }}-
+
+      - name: Cache Swift build products
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            Tools/JanusConvert/.build
+            Tools/RuleListValidate/.build
+          key: swiftbuild-${{ hashFiles('Tools/**/*.swift', 'Tools/**/Package.resolved') }}-xcode26.6
+          restore-keys: swiftbuild-
+
+      - name: Build the Swift tools
+        run: |
+          swift build -c release --package-path Tools/JanusConvert
+          swift build -c release --package-path Tools/RuleListValidate
+          "$(swift build -c release --package-path Tools/JanusConvert --show-bin-path)/JanusConvert" version
+
+      - name: Convert, validate and compress every bucket
+        run: |
+          set -euo pipefail
+          export LC_ALL=C   # byte order for the bucket glob: advanced.txt is accumulated in bucket-id order
+          convert_bin="$(swift build -c release --package-path Tools/JanusConvert --show-bin-path)/JanusConvert"
+          validate_bin="$(swift build -c release --package-path Tools/RuleListValidate --show-bin-path)/RuleListValidate"
+          mkdir -p build/dist
+          # WKContentRuleListStore driven from an unbundled command-line tool is the
+          # one dependency that cannot be checked on the dev machine: prove it works
+          # now, not 45 minutes from now (PIPELINE 13).
+          "${validate_bin}" --self-test
+          # Which advanced payload each bucket appends to: default-on buckets share
+          # advanced.txt, every opt-in bucket has one of its own (CONTRACT 9.1).
+          node scripts/advanced-targets.mjs > build/advanced-targets.txt
+          IFS=',' read -ra flavours <<< "${FLAVOURS}"
+          for flavour in "${flavours[@]}"; do
+            mkdir -p "build/converted/${flavour}" "build/validate/${flavour}"
+            # --advanced appends, so every target is truncated once per flavour.
+            for target in $(awk '{print $2}' build/advanced-targets.txt | sort -u); do
+              : > "build/converted/${flavour}/${target}"
+            done
+            for input in build/buckets/*.txt; do
+              id="$(basename "${input}" .txt)"
+              strict=""
+              # A conversion error in janus.active is never acceptable: surrogates
+              # are all-or-nothing (PIPELINE section 18).
+              if [ "${id}" = "janus.active" ]; then strict="--strict"; fi
+              target="$(awk -v id="${id}" '$1 == id { print $2 }' build/advanced-targets.txt)"
+              if [ -z "${target}" ]; then
+                echo "::error::${id} has no advanced-rules target in build/advanced-targets.txt"
+                exit 1
+              fi
+              "${convert_bin}" convert \
+                --input "${input}" \
+                --bucket-id "${id}" \
+                --flavour "${flavour}" \
+                --out-json "build/converted/${flavour}/${id}.json" \
+                --out-stats "build/converted/${flavour}/${id}.conv.json" \
+                --advanced "build/converted/${flavour}/${target}" \
+                ${strict}
+            done
+            # A replicated exception is converted once per bucket it reached, so the
+            # same advanced line can arrive many times. First occurrence wins.
+            for payload in build/converted/${flavour}/advanced*.txt; do
+              awk '!seen[$0]++' "${payload}" > "${payload}.dedupe"
+              mv "${payload}.dedupe" "${payload}"
+            done
+            # Splice the redirect actions and folded exceptions into janus.active
+            # before WebKit sees it (PIPELINE 15.1 step 1).
+            node src/cli.mjs pack --splice-active --flavours "${flavour}"
+            # `engine` needs at least one advanced rule; with an empty advanced.txt
+            # it is a usage error, and pack then just reports engine.absent.
+            if [ -s "build/converted/${flavour}/advanced.txt" ]; then
+              mkdir -p "build/converted/${flavour}/engine"
+              # stdout is the tool's JSON summary; pack reads engineSchemaVersion
+              # out of it (PIPELINE 12, CONTRACT 9.3).
+              "${convert_bin}" engine \
+                --input "build/converted/${flavour}/advanced.txt" \
+                --flavour "${flavour}" \
+                --out-dir "build/converted/${flavour}/engine" \
+                > "build/converted/${flavour}/engine/engine.json"
+            else
+              echo "::warning::no advanced rules for ${flavour}; skipping the engine payload"
+            fi
+            "${validate_bin}" \
+              --dir "build/converted/${flavour}" \
+              --flavour "${flavour}" \
+              --out "build/validate/${flavour}/report.json" \
+              --store "${RUNNER_TEMP}/rulelist-store-${flavour}" \
+              --soft-cap 80000 --hard-cap 110000 \
+              --compile-budget-ms 20000 \
+              --bisect --max-bisect 40 \
+              --compress build/dist
+          done
+          # Engine tars plus anything the validator did not compress.
+          node src/cli.mjs pack --prepare-payloads --flavours "${FLAVOURS}"
+          # Everything compression_tool wrote is decoded again through
+          # NSData.decompressed(using: .lzfse) - the exact API the phone calls - so a
+          # container mismatch cannot reach a device. The bucket payloads were written
+          # by the validator itself and already passed this check.
+          pairs=""
+          add_pair() {
+            [ -s "$1" ] || return 0
+            [ -f "$2" ] || return 0
+            pairs="${pairs:+${pairs},}$1=$2"
+          }
+          for flavour in "${flavours[@]}"; do
+            for payload in build/converted/${flavour}/advanced*.txt; do
+              base="$(basename "${payload}" .txt)"
+              add_pair "${payload}" "build/dist/advanced.${flavour}${base#advanced}.txt.lzfse"
+            done
+            add_pair "build/converted/${flavour}/engine.tar" "build/dist/engine.${flavour}.tar.lzfse"
+          done
+          for aux in linkcleaner.json popup-index.json sitefix.json; do
+            add_pair "build/auxdata/${aux}" "build/dist/${aux}.lzfse"
+          done
+          if [ -n "${pairs}" ]; then
+            "${validate_bin}" --verify-lzfse "${pairs}"
+          fi
+
+      - name: Dropped-rule report
+        run: node src/cli.mjs report
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "### Conversion"
+            echo ""
+            for report in build/validate/*/report.json; do
+              [ -f "${report}" ] || continue
+              echo "<details><summary>$(dirname "${report}" | xargs basename)</summary>"
+              echo ""
+              echo '```json'
+              head -c 60000 "${report}"
+              echo '```'
+              echo ""
+              echo "</details>"
+            done
+            if [ -f build/reports/dropped.md ]; then
+              echo ""
+              head -c 80000 build/reports/dropped.md
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload converted payloads
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: janus-filters-converted-${{ github.run_id }}
+          # build/dist travels with this artifact because LZFSE lives on macOS:
+          # the publish job hashes these exact bytes, it never re-compresses.
+          path: |
+            build/converted/
+            build/validate/
+            build/dist/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: janus-filters-reports-${{ github.run_id }}
+          path: build/reports/
+          # error, not warn: upload-artifact creates no artifact at all when it
+          # finds nothing, and the publish job's download would then fail after the
+          # whole 45-minute macOS job has run.
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: publish (filters-release)
+    runs-on: ubuntu-latest
+    needs: convert
+    timeout-minutes: 15
+    if: >-
+      github.ref == 'refs/heads/main'
+      && (github.event_name != 'workflow_dispatch' || inputs.publish)
+    environment: filters-release
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.pack.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # No `npm ci` in this job on purpose: pack, sign and verify import only
+      # node: built-ins, and a postinstall script running one step before the step
+      # that holds JANUS_FILTER_SIGNING_KEY could rewrite the code that signs.
+      - name: Download converter inputs
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: janus-filters-input-${{ github.run_id }}
+
+      - name: Check the input tree
+        run: |
+          set -euo pipefail
+          for required in build/buckets/index.json build/auxdata/killswitches.json config/buckets.json; do
+            if [ ! -f "${required}" ]; then
+              echo "::error::${required} is missing: the converter-inputs artifact did not unpack at the workspace root"
+              exit 1
+            fi
+          done
+
+      - name: Download converted payloads
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: janus-filters-converted-${{ github.run_id }}
+          # That artifact's three paths share build/ as their common root, so its
+          # entries are converted/, validate/ and dist/: restore them under build/.
+          path: build
+
+      - name: Download reports
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: janus-filters-reports-${{ github.run_id }}
+          path: build/reports
+
+      - name: Pack
+        id: pack
+        run: |
+          set -euo pipefail
+          node src/cli.mjs pack --flavours "${FLAVOURS}"
+          version="$(node -e 'console.log(JSON.parse(require("node:fs").readFileSync("build/dist/manifest.json","utf8")).version)')"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=filters-${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Sign
+        # The only step in the whole workflow that can see the key. It is read
+        # from the environment by the stage, never echoed, written or uploaded.
+        env:
+          JANUS_FILTER_SIGNING_KEY: ${{ secrets.JANUS_FILTER_SIGNING_KEY }}
+        run: node src/cli.mjs sign --manifest build/dist/manifest.json
+
+      - name: Verify locally
+        run: |
+          node src/cli.mjs verify \
+            --manifest build/dist/manifest.json \
+            --sig build/dist/manifest.json.sig \
+            --require-complete
+
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.pack.outputs.tag }}
+          VERSION: ${{ steps.pack.outputs.version }}
+        run: |
+          set -euo pipefail
+          {
+            echo "Filter bundle ${VERSION}, built by run ${GITHUB_RUN_ID} from ${GITHUB_SHA}."
+            echo ""
+            node -e '
+              const m = JSON.parse(require("node:fs").readFileSync("build/dist/manifest.json","utf8"));
+              const d = m.delta ?? {};
+              console.log(`- layoutVersion ${m.layoutVersion}, keyId ${m.keyId}, minAppBuild ${m.minAppBuild}`);
+              console.log(`- ${m.buckets.length} buckets, flavours ${m.flavours.join(", ")}`);
+              console.log(`- delta vs ${d.previousVersion ?? "n/a"}: ${d.changedBuckets ?? "?"} changed buckets, ${d.changedBytes ?? "?"} changed bytes`);
+              console.log(`- dropped rules: ${m.dropped?.total ?? "n/a"}`);
+            '
+            echo ""
+            if [ -f build/reports/dropped.md ]; then
+              echo "<details><summary>Dropped-rule report</summary>"
+              echo ""
+              head -c 40000 build/reports/dropped.md
+              echo ""
+              echo "</details>"
+            fi
+          } > "${RUNNER_TEMP}/release-notes.md"
+          gh release create "${TAG}" \
+            --draft \
+            --target "${GITHUB_SHA}" \
+            --title "Filters ${VERSION}" \
+            --notes-file "${RUNNER_TEMP}/release-notes.md"
+
+      - name: Upload the assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.pack.outputs.tag }}
+        run: |
+          set -euo pipefail
+          # Releases have no directories, which is why every file name carries
+          # its flavour (PIPELINE section 16).
+          find build/dist -maxdepth 1 -type f -print0 | sort -z | xargs -0 gh release upload "${TAG}" --clobber
+
+      - name: Re-download and verify every asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.pack.outputs.tag }}
+        run: |
+          set -euo pipefail
+          dir="${RUNNER_TEMP}/redownload"
+          mkdir -p "${dir}"
+          # A draft is not addressable by tag through the public endpoint, so the
+          # release is found by listing (which includes drafts for this token).
+          release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+            --jq ".[] | select(.tag_name == \"${TAG}\") | .id" | head -1)"
+          if [ -z "${release_id}" ]; then
+            echo "::error::draft release ${TAG} not found"
+            exit 5
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets?per_page=100" \
+            --jq '.[] | "\(.id)\t\(.name)"' | while IFS=$'\t' read -r asset_id name; do
+              gh api -H "Accept: application/octet-stream" \
+                "repos/${GITHUB_REPOSITORY}/releases/assets/${asset_id}" > "${dir}/${name}"
+            done
+          node src/cli.mjs verify \
+            --manifest "${dir}/manifest.json" \
+            --sig "${dir}/manifest.json.sig" \
+            --dir "${dir}" \
+            --require-complete
+          # The uploaded manifest must be byte-identical to the signed one.
+          cmp build/dist/manifest.json "${dir}/manifest.json"
+          cmp build/dist/manifest.json.sig "${dir}/manifest.json.sig"
+
+      - name: Confirm the live latest is older than this bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.pack.outputs.version }}
+        run: |
+          set -uo pipefail
+          # CONTRACT 7.1: `gh release edit --latest` below moves releases/latest, so
+          # the comparison has to be against what is live right now, not against the
+          # manifest the prepare job happened to fetch an hour ago.
+          base="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download"
+          dir="${RUNNER_TEMP}/live"
+          mkdir -p "${dir}"
+          if curl -fsSL --retry 5 --retry-delay 5 -o "${dir}/manifest.json" "${base}/manifest.json" \
+             && curl -fsSL --retry 5 --retry-delay 5 -o "${dir}/manifest.json.sig" "${base}/manifest.json.sig"; then
+            node src/cli.mjs verify \
+              --manifest "${dir}/manifest.json" \
+              --sig "${dir}/manifest.json.sig" \
+              --skip-age --skip-hashes
+            live="$(node -e 'console.log(JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8")).version)' "${dir}/manifest.json")"
+            echo "live latest ${live}, this run ${VERSION}"
+            if [ "${VERSION}" -le "${live}" ]; then
+              echo "::error::version ${VERSION} does not beat the live ${live}; refusing to move releases/latest backwards"
+              exit 3
+            fi
+          elif gh api "repos/${GITHUB_REPOSITORY}/releases/latest" >/dev/null 2>&1; then
+            echo "::error::a release is live but its signed manifest could not be read; refusing to move releases/latest"
+            exit 3
+          else
+            echo "no live release yet; this is the first published bundle"
+          fi
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.pack.outputs.tag }}
+        run: |
+          set -euo pipefail
+          # The instant this succeeds, releases/latest/download/... resolves here.
+          gh release edit "${TAG}" --draft=false --latest
+          gh release view "${TAG}" --json url --jq .url
+
+      - name: Delete drafts older than 7 days
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cutoff="$(date -u -d '7 days ago' +%s)"
+          gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+            --jq '.[] | select(.draft == true) | "\(.id)\t\(.tag_name)\t\(.created_at)"' \
+            | while IFS=$'\t' read -r id tag created; do
+                case "${tag}" in filters-*) ;; *) continue ;; esac
+                if [ "$(date -u -d "${created}" +%s)" -lt "${cutoff}" ]; then
+                  echo "deleting stale draft ${tag}"
+                  gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/${id}"
+                fi
+              done
+
+      - name: Job summary
+        if: always()
+        env:
+          VERSION: ${{ steps.pack.outputs.version }}
+          TAG: ${{ steps.pack.outputs.tag }}
+        run: |
+          {
+            echo "### Published"
+            echo ""
+            echo "- version: \`${VERSION}\`"
+            echo "- release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
+            echo "- manifest: https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/manifest.json"
+            echo ""
+            if [ -f build/dist/manifest.json ]; then
+              echo '```json'
+              node -e '
+                const m = JSON.parse(require("node:fs").readFileSync("build/dist/manifest.json","utf8"));
+                console.log(JSON.stringify({ version: m.version, issuedAt: m.issuedAt, expiresAt: m.expiresAt,
+                  layoutVersion: m.layoutVersion, buckets: m.buckets.length, delta: m.delta, dropped: m.dropped }, null, 2));
+              '
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the published bundle
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          # The signature is public; the private key never touches a file.
+          name: janus-filters-dist-${{ github.run_id }}
+          path: build/dist/
+          if-no-files-found: error
+          retention-days: 30
+
+  pages:
+    name: pages mirror
+    runs-on: ubuntu-latest
+    needs: publish
+    timeout-minutes: 10
+    # A Pages failure after the release is live is a warning: the Release is
+    # authoritative and the app falls back to Pages, never the other way round.
+    continue-on-error: true
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Download the published bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: janus-filters-dist-${{ github.run_id }}
+          path: dist
+
+      - name: Lay out the mirror
+        env:
+          VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p "_site/latest" "_site/v/${VERSION}"
+          cp -a dist/. "_site/latest/"
+          cp -a dist/. "_site/v/${VERSION}/"
+          cat > _site/index.html <<'HTML'
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>janus-filters mirror</title>
+          <h1>janus-filters</h1>
+          <p>Byte-identical mirror of the latest filter bundle. The GitHub Release is
+          the source of truth; this origin exists as a fallback.</p>
+          <ul>
+            <li><a href="latest/manifest.json">latest/manifest.json</a></li>
+            <li><a href="latest/manifest.json.sig">latest/manifest.json.sig</a></li>
+          </ul>
+          HTML
+
+      - name: Configure Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Upload the Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+      - name: Deploy
+        id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

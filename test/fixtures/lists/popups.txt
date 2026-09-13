@@ -1,0 +1,4 @@
+! Title: Fixture popup index source
+||popunder.example^$popup
+||another-popup.example^$popup,third-party
+$popup,domain=host.example

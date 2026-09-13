@@ -1,0 +1,61 @@
+{"rule":"||ads.example.com^$third-party","listId":"fx.adguard","line":1}
+{"rule":"||example-upper.com^","listId":"fx.adguard","line":3}
+{"rule":"||ads.example.co.uk^$important","listId":"fx.adguard","line":4}
+{"rule":"||securepubads.g.doubleclick.net/tag/js/gpt.js$script","listId":"fx.adguard","line":5}
+{"rule":"||imasdk.googleapis.com/js/sdkloader/ima3.js$script","listId":"fx.adguard","line":6}
+{"rule":"||pagead2.googlesyndication.com/pagead/js/adsbygoogle.js$script","listId":"fx.adguard","line":7}
+{"rule":"||ads.example.com^$script,third-party","listId":"fx.adguard","line":8}
+{"rule":"@@||ads.example.com/allowed.js$script","listId":"fx.adguard","line":9}
+{"rule":"@@||example.org^$document","listId":"fx.adguard","line":10}
+{"rule":"@@||ads.example.com^$important","listId":"fx.adguard","line":11}
+{"rule":"@@/banner/$image","listId":"fx.adguard","line":12}
+{"rule":"##.generic-advert","listId":"fx.adguard","line":13}
+{"rule":"##div[id^=\"ad-slot\"]","listId":"fx.adguard","line":14}
+{"rule":"example.com##.sidebar-ad","listId":"fx.adguard","line":15}
+{"rule":"example.com,example.org##.promo","listId":"fx.adguard","line":16}
+{"rule":"~sub.example.com,example.com##.tracked","listId":"fx.adguard","line":17}
+{"rule":"||example.com/path$replace=/ad//","listId":"fx.adguard","line":18}
+{"rule":"||example.com^$removeheader=refresh","listId":"fx.adguard","line":19}
+{"rule":"||popads.example^$popup","listId":"fx.adguard","line":20}
+{"rule":"$domain=torrent.example,popup,third-party","listId":"fx.adguard","line":21}
+{"rule":"||xn--e1afmkfd.example^","listId":"fx.adguard","line":22}
+{"rule":"||0.0.0.0.example^","listId":"fx.adguard","line":23}
+{"rule":"||xn--.example^","listId":"fx.adguard","line":24}
+{"rule":"example.com#%#//scriptlet('abort-on-property-read', 'adblock')","listId":"fx.ubo","line":1}
+{"rule":"example.com#%#//scriptlet('prevent-window-open')","listId":"fx.ubo","line":2}
+{"rule":"example.com#%#//scriptlet('remove-node-text', 'script', 'ads')","listId":"fx.ubo","line":3}
+{"rule":"video.example#%#//scriptlet('set-cookie', 'consent', 'ok')","listId":"fx.ubo","line":4}
+{"rule":"example.org#%#//scriptlet('abort-on-property-read', 'adblock')","listId":"fx.ubo","line":5}
+{"rule":"example.org#%#window.__adblock = false;","listId":"fx.ubo","line":6}
+{"rule":"example.com#?#div:has-text(sponsored)","listId":"fx.ubo","line":7}
+{"rule":"example.com#@#.sidebar-ad","listId":"fx.ubo","line":8}
+{"rule":"@@||securepubads.g.doubleclick.net/tag/js/gpt.js$domain=news.example","listId":"fx.ubo","line":9}
+{"rule":"@@||imasdk.googleapis.com/js/sdkloader/ima3.js","listId":"fx.ubo","line":10}
+{"rule":"||example.com/ima3.js$redirect=google-ima3,script","listId":"fx.ubo","line":13}
+{"rule":"||ads.untrusted.example^$third-party","listId":"fx.untrusted","line":1}
+{"rule":"untrusted.example##.ad","listId":"fx.untrusted","line":2}
+{"rule":"untrusted.example#%#//scriptlet('set-constant', 'adblock', 'false')","listId":"fx.untrusted","line":3}
+{"rule":"||ads.hosts.example^","listId":"fx.hosts","line":1}
+{"rule":"||beacon.hosts.example^","listId":"fx.hosts","line":2}
+{"rule":"||tracker.hosts.example^","listId":"fx.hosts","line":3}
+{"rule":"||pixel.hosts.example^","listId":"fx.hosts","line":4}
+{"rule":"||ip6.hosts.example^","listId":"fx.hosts","line":5}
+{"rule":"||root.include.example^","listId":"fx.include","line":1}
+{"rule":"||part1.include.example^","listId":"fx.include","line":2}
+{"rule":"||part2.include.example^","listId":"fx.include","line":3}
+{"rule":"||after.include.example^","listId":"fx.include","line":4}
+{"rule":"||if-safari.example^","listId":"fx.ifmatrix","line":1}
+{"rule":"||if-and-not.example^","listId":"fx.ifmatrix","line":2}
+{"rule":"||if-parens.example^","listId":"fx.ifmatrix","line":3}
+{"rule":"||if-html-else.example^","listId":"fx.ifmatrix","line":4}
+{"rule":"||if-affinity.example^","listId":"fx.ifmatrix","line":5}
+{"rule":"||if-after-affinity.example^","listId":"fx.ifmatrix","line":6}
+{"rule":"||malware.example^$all","listId":"fx.security","line":1}
+{"rule":"||phish.example/login^","listId":"fx.security","line":2}
+{"rule":"@@||safe.example^$document","listId":"fx.security","line":3}
+{"rule":"reddit.com##shreddit-ad-post","listId":"fx.sitefix","line":1}
+{"rule":"gofile.io##.ads","listId":"fx.sitefix","line":2}
+{"rule":"||ads.sitefix.example^","listId":"fx.sitefix","line":3}
+{"rule":"||optin-tracker.example^$third-party","listId":"fx.optin","line":1}
+{"rule":"optin.example##.tracking-pixel","listId":"fx.optin","line":2}
+{"rule":"@@||optin-tracker.example/allowed.js","listId":"fx.optin","line":3}

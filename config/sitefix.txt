@@ -1,0 +1,20 @@
+! Title: Janus site-fix list
+! Description: Hand-maintained fixes for losses the converter cannot express.
+!   Entries are added when build/reports/dropped.md shows a loss that matters
+!   (PIPELINE section 14, DESIGN 3.3 step 4). This list is trusted, so keep it
+!   small, keep every entry commented with the loss it replaces, and never add
+!   list-supplied JavaScript here: a scriptlet invocation is enough.
+! Licence: GPL-3.0-or-later, same as the rest of this repository.
+! Syntax: AdGuard. No !#include, no !#if, no $removeparam (that is LinkCleaner).
+
+! --- reddit.com: promoted posts survive network blocking, so hide the elements.
+reddit.com##shreddit-ad-post
+reddit.com##shreddit-comments-page-ad
+old.reddit.com##.promotedlink
+
+! --- gofile.io: the popunder chain is in the popup index; this covers the slot
+!     that the page leaves behind once the opener is interdicted.
+gofile.io##.ads
+
+! --- Video sites: add the rule that replaces each dropped $replace or ##^ rule
+!     here, with the dropped-report cause in the comment above it.

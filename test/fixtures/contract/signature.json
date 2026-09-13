@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "item": "CONTRACT 14.2 signature round trip",
+  "note": "Ed25519 over the exact manifest bytes: no digest name, no canonicalisation. The key is a throwaway generated for this vector; the pinned production key signs real bundles only. manifest is the literal UTF-8 text, LF, no trailing newline.",
+  "publicKeyBase64": "XVXaz4xRKlNn2JP8qlWjFLzoOem3U6O8+MsT/sWULu0=",
+  "keyId": "9922d3973b812003",
+  "manifest": "{\n  \"contractVersion\": 1,\n  \"schemaVersion\": 1,\n  \"layoutVersion\": 1,\n  \"version\": 2026091300,\n  \"issuedAt\": \"2026-09-13T04:17:00Z\",\n  \"expiresAt\": \"2026-09-27T04:17:00Z\",\n  \"keyId\": \"9922d3973b812003\",\n  \"minAppBuild\": 1,\n  \"baseUrl\": \"https://github.com/mioutic/janus-filters/releases/download/filters-2026091300/\",\n  \"mirrors\": [\n    \"https://mioutic.github.io/janus-filters/v/2026091300/\"\n  ],\n  \"flavours\": [\n    \"ios17\",\n    \"ios26\"\n  ]\n}",
+  "manifestSha256": "ec0c3faed184afd1c6af46630f6d2896c254ad18c5300c02e319f23df07c9922",
+  "signatureBase64": "5u7KQJUIz5YAOUMakZMYnZiJe7dJie/RmqxZ1+hEoj665HnaA1+ZfyyN0nAIV9tCRrc6efUl05Zdh8U9vIA2Cg==",
+  "mustReject": [
+    {
+      "why": "one flipped byte in the manifest",
+      "manifestPatch": {
+        "atByte": 30,
+        "toByte": 32
+      }
+    },
+    {
+      "why": "one flipped byte in the signature",
+      "signaturePatch": {
+        "atByte": 0
+      }
+    }
+  ]
+}

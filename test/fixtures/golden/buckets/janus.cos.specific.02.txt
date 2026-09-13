@@ -1,0 +1,10 @@
+example.com##.sidebar-ad
+example.com,example.org##.promo
+~sub.example.com,example.com##.tracked
+example.com#%#//scriptlet('abort-on-property-read', 'adblock')
+example.com#%#//scriptlet('prevent-window-open')
+example.com#%#//scriptlet('remove-node-text', 'script', 'ads')
+example.com#?#div:has-text(sponsored)
+untrusted.example##.ad
+untrusted.example#%#//scriptlet('set-constant', 'adblock', 'false')
+example.com#@#.sidebar-ad

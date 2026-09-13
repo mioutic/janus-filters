@@ -1,0 +1,282 @@
+{
+  "schemaVersion": 1,
+  "buckets": {
+    "janus.cos.generic.fx-optin.gen00": {
+      "family": "cos.generic",
+      "optIn": true,
+      "optInSlug": "fx-optin",
+      "ruleCount": 1,
+      "originalCount": 0,
+      "replicatedCount": 1,
+      "sourceLists": [
+        "fx.ubo"
+      ]
+    },
+    "janus.cos.generic.fx-optin.gen01": {
+      "family": "cos.generic",
+      "optIn": true,
+      "optInSlug": "fx-optin",
+      "ruleCount": 1,
+      "originalCount": 0,
+      "replicatedCount": 1,
+      "sourceLists": [
+        "fx.ubo"
+      ]
+    },
+    "janus.cos.generic.gen00": {
+      "family": "cos.generic",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 2,
+      "originalCount": 1,
+      "replicatedCount": 1,
+      "sourceLists": [
+        "fx.adguard",
+        "fx.ubo"
+      ]
+    },
+    "janus.cos.generic.gen01": {
+      "family": "cos.generic",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 2,
+      "originalCount": 1,
+      "replicatedCount": 1,
+      "sourceLists": [
+        "fx.adguard",
+        "fx.ubo"
+      ]
+    },
+    "janus.cos.specific.00": {
+      "family": "cos.specific",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 3,
+      "originalCount": 3,
+      "replicatedCount": 0,
+      "sourceLists": [
+        "fx.sitefix",
+        "fx.ubo"
+      ]
+    },
+    "janus.cos.specific.01": {
+      "family": "cos.specific",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 2,
+      "originalCount": 2,
+      "replicatedCount": 0,
+      "sourceLists": [
+        "fx.sitefix",
+        "fx.ubo"
+      ]
+    },
+    "janus.cos.specific.02": {
+      "family": "cos.specific",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 10,
+      "originalCount": 10,
+      "replicatedCount": 0,
+      "sourceLists": [
+        "fx.adguard",
+        "fx.ubo",
+        "fx.untrusted"
+      ]
+    },
+    "janus.cos.specific.fx-optin.00": {
+      "family": "cos.specific",
+      "optIn": true,
+      "optInSlug": "fx-optin",
+      "ruleCount": 1,
+      "originalCount": 1,
+      "replicatedCount": 0,
+      "sourceLists": [
+        "fx.optin"
+      ]
+    },
+    "janus.cos.specific.fx-optin.01": {
+      "family": "cos.specific",
+      "optIn": true,
+      "optInSlug": "fx-optin",
+      "ruleCount": 0,
+      "originalCount": 0,
+      "replicatedCount": 0,
+      "sourceLists": []
+    },
+    "janus.cos.specific.fx-optin.02": {
+      "family": "cos.specific",
+      "optIn": true,
+      "optInSlug": "fx-optin",
+      "ruleCount": 1,
+      "originalCount": 0,
+      "replicatedCount": 1,
+      "sourceLists": [
+        "fx.ubo"
+      ]
+    },
+    "janus.net.ads.00": {
+      "family": "net.ads",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 20,
+      "originalCount": 4,
+      "replicatedCount": 2,
+      "sourceLists": [
+        "fx.adguard",
+        "fx.ifmatrix",
+        "fx.ubo"
+      ],
+      "surrogateTailCount": 14
+    },
+    "janus.net.ads.01": {
+      "family": "net.ads",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 23,
+      "originalCount": 8,
+      "replicatedCount": 1,
+      "sourceLists": [
+        "fx.adguard",
+        "fx.ifmatrix",
+        "fx.sitefix",
+        "fx.ubo"
+      ],
+      "surrogateTailCount": 14
+    },
+    "janus.net.ads.02": {
+      "family": "net.ads",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 29,
+      "originalCount": 12,
+      "replicatedCount": 3,
+      "sourceLists": [
+        "fx.adguard",
+        "fx.ifmatrix",
+        "fx.ubo"
+      ],
+      "surrogateTailCount": 14
+    },
+    "janus.net.ads.03": {
+      "family": "net.ads",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 23,
+      "originalCount": 7,
+      "replicatedCount": 2,
+      "sourceLists": [
+        "fx.adguard",
+        "fx.include"
+      ],
+      "surrogateTailCount": 14
+    },
+    "janus.net.ads.gen00": {
+      "family": "net.ads",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 20,
+      "originalCount": 1,
+      "replicatedCount": 5,
+      "sourceLists": [
+        "fx.adguard",
+        "fx.ubo"
+      ],
+      "surrogateTailCount": 14
+    },
+    "janus.net.privacy.00": {
+      "family": "net.privacy",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 19,
+      "originalCount": 5,
+      "replicatedCount": 0,
+      "sourceLists": [
+        "fx.hosts"
+      ],
+      "surrogateTailCount": 14
+    },
+    "janus.net.privacy.01": {
+      "family": "net.privacy",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 15,
+      "originalCount": 1,
+      "replicatedCount": 0,
+      "sourceLists": [
+        "fx.untrusted"
+      ],
+      "surrogateTailCount": 14
+    },
+    "janus.net.privacy.fx-optin.00": {
+      "family": "net.privacy",
+      "optIn": true,
+      "optInSlug": "fx-optin",
+      "ruleCount": 16,
+      "originalCount": 2,
+      "replicatedCount": 0,
+      "sourceLists": [
+        "fx.optin"
+      ],
+      "surrogateTailCount": 14
+    },
+    "janus.net.privacy.fx-optin.gen00": {
+      "family": "net.privacy",
+      "optIn": true,
+      "optInSlug": "fx-optin",
+      "ruleCount": 15,
+      "originalCount": 0,
+      "replicatedCount": 1,
+      "sourceLists": [
+        "fx.optin"
+      ],
+      "surrogateTailCount": 14
+    },
+    "janus.net.privacy.gen00": {
+      "family": "net.privacy",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 14,
+      "originalCount": 0,
+      "replicatedCount": 0,
+      "sourceLists": [],
+      "surrogateTailCount": 14
+    },
+    "janus.net.security.00": {
+      "family": "net.security",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 17,
+      "originalCount": 3,
+      "replicatedCount": 0,
+      "sourceLists": [
+        "fx.security"
+      ],
+      "surrogateTailCount": 14
+    },
+    "janus.net.security.gen00": {
+      "family": "net.security",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 15,
+      "originalCount": 0,
+      "replicatedCount": 1,
+      "sourceLists": [
+        "fx.security"
+      ],
+      "surrogateTailCount": 14
+    },
+    "janus.active": {
+      "family": "active",
+      "optIn": false,
+      "optInSlug": null,
+      "ruleCount": 15,
+      "originalCount": 15,
+      "replicatedCount": 0,
+      "redirectRules": 14,
+      "sourceLists": [
+        "config/surrogates.json"
+      ]
+    }
+  }
+}

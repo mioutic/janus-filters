@@ -1,0 +1,813 @@
+{
+  "schemaVersion": 1,
+  "generatedFrom": {
+    "package": "@adguard/scriptlets",
+    "version": "2.5.1"
+  },
+  "scriptlets": {
+    "abort-current-inline-script.js": {
+      "adguard": "abort-current-inline-script",
+      "args": "identity"
+    },
+    "abort-current-script": {
+      "adguard": "abort-current-inline-script",
+      "args": "identity"
+    },
+    "abort-current-script.js": {
+      "adguard": "abort-current-inline-script",
+      "args": "identity"
+    },
+    "abort-on-property-read.js": {
+      "adguard": "abort-on-property-read",
+      "args": "identity"
+    },
+    "abort-on-property-write.js": {
+      "adguard": "abort-on-property-write",
+      "args": "identity"
+    },
+    "abort-on-stack-trace.js": {
+      "adguard": "abort-on-stack-trace",
+      "args": "identity"
+    },
+    "acis": {
+      "adguard": "abort-current-inline-script",
+      "args": "identity"
+    },
+    "acis.js": {
+      "adguard": "abort-current-inline-script",
+      "args": "identity"
+    },
+    "acs": {
+      "adguard": "abort-current-inline-script",
+      "args": "identity"
+    },
+    "acs.js": {
+      "adguard": "abort-current-inline-script",
+      "args": "identity"
+    },
+    "addEventListener-defuser": {
+      "adguard": "prevent-addEventListener",
+      "args": "identity"
+    },
+    "addEventListener-defuser.js": {
+      "adguard": "prevent-addEventListener",
+      "args": "identity"
+    },
+    "addEventListener-logger": {
+      "adguard": "log-addEventListener",
+      "args": "identity"
+    },
+    "addEventListener-logger.js": {
+      "adguard": "log-addEventListener",
+      "args": "identity"
+    },
+    "adjust-setInterval.js": {
+      "adguard": "adjust-setInterval",
+      "args": "identity"
+    },
+    "adjust-setTimeout.js": {
+      "adguard": "adjust-setTimeout",
+      "args": "identity"
+    },
+    "aeld": {
+      "adguard": "prevent-addEventListener",
+      "args": "identity"
+    },
+    "aeld.js": {
+      "adguard": "prevent-addEventListener",
+      "args": "identity"
+    },
+    "aell": {
+      "adguard": "log-addEventListener",
+      "args": "identity"
+    },
+    "aell.js": {
+      "adguard": "log-addEventListener",
+      "args": "identity"
+    },
+    "amazon_apstag.js": {
+      "adguard": "amazon-apstag",
+      "args": "identity"
+    },
+    "aopr": {
+      "adguard": "abort-on-property-read",
+      "args": "identity"
+    },
+    "aopr.js": {
+      "adguard": "abort-on-property-read",
+      "args": "identity"
+    },
+    "aopw": {
+      "adguard": "abort-on-property-write",
+      "args": "identity"
+    },
+    "aopw.js": {
+      "adguard": "abort-on-property-write",
+      "args": "identity"
+    },
+    "aost": {
+      "adguard": "abort-on-stack-trace",
+      "args": "identity"
+    },
+    "aost.js": {
+      "adguard": "abort-on-stack-trace",
+      "args": "identity"
+    },
+    "call-nothrow.js": {
+      "adguard": "call-nothrow",
+      "args": "identity"
+    },
+    "close-window.js": {
+      "adguard": "close-window",
+      "args": "identity"
+    },
+    "cookie-remover": {
+      "adguard": "remove-cookie",
+      "args": "identity"
+    },
+    "cookie-remover.js": {
+      "adguard": "remove-cookie",
+      "args": "identity"
+    },
+    "disable-newtab-links.js": {
+      "adguard": "disable-newtab-links",
+      "args": "identity"
+    },
+    "evaldata-prune.js": {
+      "adguard": "evaldata-prune",
+      "args": "identity"
+    },
+    "fingerprint2.js": {
+      "adguard": "fingerprintjs2",
+      "args": "identity"
+    },
+    "fingerprint3.js": {
+      "adguard": "fingerprintjs3",
+      "args": "identity"
+    },
+    "fuckadblock.js-3.2.0": {
+      "adguard": "prevent-fab-3.2.0",
+      "args": "identity"
+    },
+    "google-analytics_analytics.js": {
+      "adguard": "google-analytics",
+      "args": "identity"
+    },
+    "google-analytics_ga.js": {
+      "adguard": "google-analytics-ga",
+      "args": "identity"
+    },
+    "google-ima.js": {
+      "adguard": "google-ima3",
+      "args": "identity"
+    },
+    "googlesyndication_adsbygoogle.js": {
+      "adguard": "googlesyndication-adsbygoogle",
+      "args": "identity"
+    },
+    "googletagmanager-gtm": {
+      "adguard": "google-analytics",
+      "args": "identity"
+    },
+    "googletagmanager_gtm.js": {
+      "adguard": "google-analytics",
+      "args": "identity"
+    },
+    "googletagservices_gpt.js": {
+      "adguard": "googletagservices-gpt",
+      "args": "identity"
+    },
+    "href-sanitizer.js": {
+      "adguard": "href-sanitizer",
+      "args": "identity"
+    },
+    "json-edit": {
+      "adguard": "json-prune",
+      "args": "identity"
+    },
+    "json-edit-fetch-response": {
+      "adguard": "json-prune-fetch-response",
+      "args": "identity"
+    },
+    "json-edit-fetch-response.js": {
+      "adguard": "json-prune-fetch-response",
+      "args": "identity"
+    },
+    "json-edit-xhr-response": {
+      "adguard": "json-prune-xhr-response",
+      "args": "identity"
+    },
+    "json-edit-xhr-response.js": {
+      "adguard": "json-prune-xhr-response",
+      "args": "identity"
+    },
+    "json-edit.js": {
+      "adguard": "json-prune",
+      "args": "identity"
+    },
+    "json-prune-fetch-response.js": {
+      "adguard": "json-prune-fetch-response",
+      "args": "identity"
+    },
+    "json-prune-xhr-response.js": {
+      "adguard": "json-prune-xhr-response",
+      "args": "identity"
+    },
+    "json-prune.js": {
+      "adguard": "json-prune",
+      "args": "identity"
+    },
+    "m3u-prune.js": {
+      "adguard": "m3u-prune",
+      "args": "identity"
+    },
+    "nano-setInterval-booster": {
+      "adguard": "adjust-setInterval",
+      "args": "identity"
+    },
+    "nano-setInterval-booster.js": {
+      "adguard": "adjust-setInterval",
+      "args": "identity"
+    },
+    "nano-setTimeout-booster": {
+      "adguard": "adjust-setTimeout",
+      "args": "identity"
+    },
+    "nano-setTimeout-booster.js": {
+      "adguard": "adjust-setTimeout",
+      "args": "identity"
+    },
+    "nano-sib": {
+      "adguard": "adjust-setInterval",
+      "args": "identity"
+    },
+    "nano-sib.js": {
+      "adguard": "adjust-setInterval",
+      "args": "identity"
+    },
+    "nano-stb": {
+      "adguard": "adjust-setTimeout",
+      "args": "identity"
+    },
+    "nano-stb.js": {
+      "adguard": "adjust-setTimeout",
+      "args": "identity"
+    },
+    "no-fetch-if": {
+      "adguard": "prevent-fetch",
+      "args": "identity"
+    },
+    "no-fetch-if.js": {
+      "adguard": "prevent-fetch",
+      "args": "identity"
+    },
+    "no-requestAnimationFrame-if": {
+      "adguard": "prevent-requestAnimationFrame",
+      "args": "identity"
+    },
+    "no-requestAnimationFrame-if.js": {
+      "adguard": "prevent-requestAnimationFrame",
+      "args": "identity"
+    },
+    "no-setInterval-if": {
+      "adguard": "prevent-setInterval",
+      "args": "identity"
+    },
+    "no-setInterval-if.js": {
+      "adguard": "prevent-setInterval",
+      "args": "identity"
+    },
+    "no-setTimeout-if": {
+      "adguard": "prevent-setTimeout",
+      "args": "identity"
+    },
+    "no-setTimeout-if.js": {
+      "adguard": "prevent-setTimeout",
+      "args": "identity"
+    },
+    "no-window-open-if": {
+      "adguard": "prevent-window-open",
+      "args": "identity"
+    },
+    "no-window-open-if.js": {
+      "adguard": "prevent-window-open",
+      "args": "identity"
+    },
+    "no-xhr-if": {
+      "adguard": "prevent-xhr",
+      "args": "identity"
+    },
+    "no-xhr-if.js": {
+      "adguard": "prevent-xhr",
+      "args": "identity"
+    },
+    "noeval-if": {
+      "adguard": "prevent-eval-if",
+      "args": "identity"
+    },
+    "noeval-if.js": {
+      "adguard": "prevent-eval-if",
+      "args": "identity"
+    },
+    "noeval.js": {
+      "adguard": "noeval",
+      "args": "identity"
+    },
+    "nofab": {
+      "adguard": "prevent-fab-3.2.0",
+      "args": "identity"
+    },
+    "nofab.js": {
+      "adguard": "prevent-fab-3.2.0",
+      "args": "identity"
+    },
+    "norafif": {
+      "adguard": "prevent-requestAnimationFrame",
+      "args": "identity"
+    },
+    "norafif.js": {
+      "adguard": "prevent-requestAnimationFrame",
+      "args": "identity"
+    },
+    "nosiif": {
+      "adguard": "prevent-setInterval",
+      "args": "identity"
+    },
+    "nosiif.js": {
+      "adguard": "prevent-setInterval",
+      "args": "identity"
+    },
+    "nostif": {
+      "adguard": "prevent-setTimeout",
+      "args": "identity"
+    },
+    "nostif.js": {
+      "adguard": "prevent-setTimeout",
+      "args": "identity"
+    },
+    "nowebrtc.js": {
+      "adguard": "nowebrtc",
+      "args": "identity"
+    },
+    "nowoif": {
+      "adguard": "prevent-window-open",
+      "args": "identity"
+    },
+    "nowoif.js": {
+      "adguard": "prevent-window-open",
+      "args": "identity"
+    },
+    "popads-dummy": {
+      "adguard": "set-popads-dummy",
+      "args": "identity"
+    },
+    "popads-dummy.js": {
+      "adguard": "set-popads-dummy",
+      "args": "identity"
+    },
+    "popads.net": {
+      "adguard": "prevent-popads-net",
+      "args": "identity"
+    },
+    "popads.net.js": {
+      "adguard": "prevent-popads-net",
+      "args": "identity"
+    },
+    "prevent-canvas.js": {
+      "adguard": "prevent-canvas",
+      "args": "identity"
+    },
+    "prevent-fetch.js": {
+      "adguard": "prevent-fetch",
+      "args": "identity"
+    },
+    "prevent-innerHTML.js": {
+      "adguard": "prevent-innerHTML",
+      "args": "identity"
+    },
+    "prevent-refresh.js": {
+      "adguard": "prevent-refresh",
+      "args": "identity"
+    },
+    "ra": {
+      "adguard": "remove-attr",
+      "args": "identity"
+    },
+    "ra.js": {
+      "adguard": "remove-attr",
+      "args": "identity"
+    },
+    "rc": {
+      "adguard": "remove-class",
+      "args": "identity"
+    },
+    "rc.js": {
+      "adguard": "remove-class",
+      "args": "identity"
+    },
+    "refresh-defuser": {
+      "adguard": "prevent-refresh",
+      "args": "identity"
+    },
+    "refresh-defuser.js": {
+      "adguard": "prevent-refresh",
+      "args": "identity"
+    },
+    "remove-attr.js": {
+      "adguard": "remove-attr",
+      "args": "identity"
+    },
+    "remove-class.js": {
+      "adguard": "remove-class",
+      "args": "identity"
+    },
+    "remove-cookie.js": {
+      "adguard": "remove-cookie",
+      "args": "identity"
+    },
+    "remove-node-text.js": {
+      "adguard": "remove-node-text",
+      "args": "identity"
+    },
+    "rmnt": {
+      "adguard": "remove-node-text",
+      "args": "identity"
+    },
+    "rmnt.js": {
+      "adguard": "remove-node-text",
+      "args": "identity"
+    },
+    "scorecardresearch_beacon.js": {
+      "adguard": "scorecardresearch-beacon",
+      "args": "identity"
+    },
+    "set": {
+      "adguard": "set-constant",
+      "args": "identity"
+    },
+    "set-attr.js": {
+      "adguard": "set-attr",
+      "args": "identity"
+    },
+    "set-constant.js": {
+      "adguard": "set-constant",
+      "args": "identity"
+    },
+    "set-cookie-reload.js": {
+      "adguard": "set-cookie-reload",
+      "args": "identity"
+    },
+    "set-cookie.js": {
+      "adguard": "set-cookie",
+      "args": "identity"
+    },
+    "set-local-storage-item.js": {
+      "adguard": "set-local-storage-item",
+      "args": "identity"
+    },
+    "set-session-storage-item.js": {
+      "adguard": "set-session-storage-item",
+      "args": "identity"
+    },
+    "set.js": {
+      "adguard": "set-constant",
+      "args": "identity"
+    },
+    "setInterval-defuser": {
+      "adguard": "prevent-setInterval",
+      "args": "identity"
+    },
+    "setInterval-defuser.js": {
+      "adguard": "prevent-setInterval",
+      "args": "identity"
+    },
+    "setTimeout-defuser": {
+      "adguard": "prevent-setTimeout",
+      "args": "identity"
+    },
+    "setTimeout-defuser.js": {
+      "adguard": "prevent-setTimeout",
+      "args": "identity"
+    },
+    "sid": {
+      "adguard": "prevent-setInterval",
+      "args": "identity"
+    },
+    "sid.js": {
+      "adguard": "prevent-setInterval",
+      "args": "identity"
+    },
+    "silent-noeval": {
+      "adguard": "noeval",
+      "args": "identity"
+    },
+    "silent-noeval.js": {
+      "adguard": "noeval",
+      "args": "identity"
+    },
+    "spoof-css.js": {
+      "adguard": "spoof-css",
+      "args": "identity"
+    },
+    "std": {
+      "adguard": "prevent-setTimeout",
+      "args": "identity"
+    },
+    "std.js": {
+      "adguard": "prevent-setTimeout",
+      "args": "identity"
+    },
+    "window-close-if": {
+      "adguard": "close-window",
+      "args": "identity"
+    },
+    "window-close-if.js": {
+      "adguard": "close-window",
+      "args": "identity"
+    },
+    "window.open-defuser": {
+      "adguard": "prevent-window-open",
+      "args": "identity"
+    },
+    "window.open-defuser.js": {
+      "adguard": "prevent-window-open",
+      "args": "identity"
+    },
+    "xml-prune.js": {
+      "adguard": "xml-prune",
+      "args": "identity"
+    }
+  },
+  "redirects": {
+    "1x1-transparent-gif": {
+      "adguard": "1x1-transparent.gif"
+    },
+    "1x1.gif": {
+      "adguard": "1x1-transparent.gif"
+    },
+    "2x2-transparent-png": {
+      "adguard": "2x2-transparent.png"
+    },
+    "2x2.png": {
+      "adguard": "2x2-transparent.png"
+    },
+    "32x32-transparent-png": {
+      "adguard": "32x32-transparent.png"
+    },
+    "32x32.png": {
+      "adguard": "32x32-transparent.png"
+    },
+    "3x2-transparent-png": {
+      "adguard": "3x2-transparent.png"
+    },
+    "3x2.png": {
+      "adguard": "3x2-transparent.png"
+    },
+    "amazon_apstag.js": {
+      "adguard": "amazon-apstag"
+    },
+    "blank-css": {
+      "adguard": "noopcss"
+    },
+    "blank-html": {
+      "adguard": "noopframe"
+    },
+    "blank-js": {
+      "adguard": "noopjs"
+    },
+    "blank-mp3": {
+      "adguard": "noopmp3-0.1s"
+    },
+    "blank-mp4": {
+      "adguard": "noopmp4-1s"
+    },
+    "blank-text": {
+      "adguard": "nooptext"
+    },
+    "fingerprint2.js": {
+      "adguard": "fingerprintjs2"
+    },
+    "fingerprint3.js": {
+      "adguard": "fingerprintjs3"
+    },
+    "fuckadblock.js-3.2.0": {
+      "adguard": "prevent-fab-3.2.0"
+    },
+    "google-analytics_analytics.js": {
+      "adguard": "google-analytics"
+    },
+    "google-analytics_ga.js": {
+      "adguard": "google-analytics-ga"
+    },
+    "google-ima.js": {
+      "adguard": "google-ima3"
+    },
+    "googlesyndication_adsbygoogle.js": {
+      "adguard": "googlesyndication-adsbygoogle"
+    },
+    "googletagmanager-gtm": {
+      "adguard": "google-analytics"
+    },
+    "googletagmanager_gtm.js": {
+      "adguard": "google-analytics"
+    },
+    "googletagservices_gpt.js": {
+      "adguard": "googletagservices-gpt"
+    },
+    "nobab2.js": {
+      "adguard": "prevent-bab2"
+    },
+    "noeval.js": {
+      "adguard": "noeval"
+    },
+    "nofab": {
+      "adguard": "prevent-fab-3.2.0"
+    },
+    "nofab.js": {
+      "adguard": "prevent-fab-3.2.0"
+    },
+    "noop-1s.mp4": {
+      "adguard": "noopmp4-1s"
+    },
+    "noop-vast2.xml": {
+      "adguard": "noopvast-2.0"
+    },
+    "noop-vast3.xml": {
+      "adguard": "noopvast-3.0"
+    },
+    "noop-vast4.xml": {
+      "adguard": "noopvast-4.0"
+    },
+    "noop-vmap1.0.xml": {
+      "adguard": "noopvmap-1.0"
+    },
+    "noop-vmap1.xml": {
+      "adguard": "noopvmap-1.0"
+    },
+    "noop.css": {
+      "adguard": "noopcss"
+    },
+    "noop.html": {
+      "adguard": "noopframe"
+    },
+    "noop.js": {
+      "adguard": "noopjs"
+    },
+    "noop.json": {
+      "adguard": "noopjson"
+    },
+    "noop.txt": {
+      "adguard": "nooptext"
+    },
+    "popads-dummy": {
+      "adguard": "set-popads-dummy"
+    },
+    "popads-dummy.js": {
+      "adguard": "set-popads-dummy"
+    },
+    "popads.net": {
+      "adguard": "prevent-popads-net"
+    },
+    "popads.net.js": {
+      "adguard": "prevent-popads-net"
+    },
+    "prebid-ads.js": {
+      "adguard": "prebid-ads"
+    },
+    "scorecardresearch_beacon.js": {
+      "adguard": "scorecardresearch-beacon"
+    },
+    "silent-noeval": {
+      "adguard": "noeval"
+    },
+    "silent-noeval.js": {
+      "adguard": "noeval"
+    }
+  },
+  "adguardNames": [
+    "abort-current-inline-script",
+    "abort-on-property-read",
+    "abort-on-property-write",
+    "abort-on-stack-trace",
+    "adjust-setInterval",
+    "adjust-setTimeout",
+    "amazon-apstag",
+    "call-nothrow",
+    "close-window",
+    "debug-current-inline-script",
+    "debug-on-property-read",
+    "debug-on-property-write",
+    "didomi-loader",
+    "dir-string",
+    "disable-newtab-links",
+    "evaldata-prune",
+    "fingerprintjs2",
+    "fingerprintjs3",
+    "freewheel-admanager",
+    "gemius",
+    "google-analytics",
+    "google-analytics-ga",
+    "google-ima3",
+    "google-ima3-dai",
+    "googlesyndication-adsbygoogle",
+    "googletagservices-gpt",
+    "hide-in-shadow-dom",
+    "href-sanitizer",
+    "inject-css-in-shadow-dom",
+    "json-prune",
+    "json-prune-fetch-response",
+    "json-prune-xhr-response",
+    "log",
+    "log-addEventListener",
+    "log-eval",
+    "log-on-stack-trace",
+    "m3u-prune",
+    "matomo",
+    "metrika-yandex-tag",
+    "metrika-yandex-watch",
+    "naver-wcslog",
+    "no-protected-audience",
+    "no-topics",
+    "noeval",
+    "nowebrtc",
+    "pardot-1.0",
+    "prebid",
+    "prevent-addEventListener",
+    "prevent-adfly",
+    "prevent-bab",
+    "prevent-canvas",
+    "prevent-constructor",
+    "prevent-element-src-loading",
+    "prevent-eval-if",
+    "prevent-fab-3.2.0",
+    "prevent-fetch",
+    "prevent-innerHTML",
+    "prevent-navigation",
+    "prevent-popads-net",
+    "prevent-refresh",
+    "prevent-requestAnimationFrame",
+    "prevent-setInterval",
+    "prevent-setTimeout",
+    "prevent-window-open",
+    "prevent-xhr",
+    "remove-attr",
+    "remove-class",
+    "remove-cookie",
+    "remove-in-shadow-dom",
+    "remove-node-text",
+    "remove-request-query-parameter",
+    "scorecardresearch-beacon",
+    "set-attr",
+    "set-constant",
+    "set-cookie",
+    "set-cookie-reload",
+    "set-local-storage-item",
+    "set-popads-dummy",
+    "set-session-storage-item",
+    "spoof-css",
+    "trusted-click-element",
+    "trusted-create-element",
+    "trusted-dispatch-event",
+    "trusted-json-set",
+    "trusted-json-set-fetch-response",
+    "trusted-json-set-xhr-response",
+    "trusted-prevent-xhr",
+    "trusted-prune-inbound-object",
+    "trusted-replace-argument",
+    "trusted-replace-fetch-response",
+    "trusted-replace-node-text",
+    "trusted-replace-outbound-text",
+    "trusted-replace-xhr-response",
+    "trusted-set-attr",
+    "trusted-set-constant",
+    "trusted-set-cookie",
+    "trusted-set-cookie-reload",
+    "trusted-set-local-storage-item",
+    "trusted-set-session-storage-item",
+    "trusted-suppress-native-method",
+    "xml-prune"
+  ],
+  "unmapped": [
+    "addthis_widget.js",
+    "amazon_ads.js",
+    "ampproject_v0.js",
+    "chartbeat.js",
+    "doubleclick_instream_ad_status.js",
+    "google-analytics_cx_api.js",
+    "google-analytics_inpage_linkid.js",
+    "hd-main.js",
+    "ligatus_angular-tag.js",
+    "monkeybroker.js",
+    "multiup.js",
+    "nobab.js",
+    "noeval-silent.js",
+    "nofetch.js",
+    "noop-0.1s.mp3",
+    "noop-0.5s.mp3",
+    "outbrain-widget.js",
+    "popads.js",
+    "replace-node-text.js",
+    "rpnt.js",
+    "window.name-defuser.js"
+  ]
+}

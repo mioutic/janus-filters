@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "pipeline": "janus-filters@1",
+  "contractVersion": 1,
+  "manifestSchemaVersion": 1,
+  "advancedTextSchemaVersion": 1,
+  "engineSchemaVersion": 1,
+  "comment": "Every pin the build depends on. scripts/pin-check.mjs verifies that package.json, the workflows and the Swift packages agree with this file; CI runs it on every push.",
+  "toolchain": {
+    "nodeMajor": 24,
+    "npmMajor": 11,
+    "runnerUbuntu": "ubuntu-latest",
+    "runnerMacos": "macos-26",
+    "xcode": "26.6",
+    "xcodeMinForSafariConverterLib": "16.3",
+    "swiftToolsVersion": "5.9",
+    "swiftLanguageMode": "5",
+    "macosPlatformMin": "13"
+  },
+  "npm": {
+    "@adguard/scriptlets": {
+      "version": "2.5.1",
+      "license": "GPL-3.0-only",
+      "url": "https://github.com/AdguardTeam/Scriptlets",
+      "shasum": "7ff914cee299dc74e09de3ffaf49700a160646d2",
+      "integrity": "sha512-008B4qm6mXU4mqHOl1HE/jfRa0D/LUX2Lx4k00G45csiBF/fnIGzVivPsT1Q+Uhp9C+zj5tKoekkL39W8HqjzA==",
+      "note": "The only npm dependency. scripts/gen-alias.mjs derives config/ubo-alias.json from its compatibility tables, and the active stage reads redirect resource bodies out of it (sha256-checked) to build the janus.active surrogates. eTLD+1 comes from the committed public-suffix subset in src/lib/psl-data.mjs, so the pipeline needs no PSL package."
+    }
+  },
+  "swift": {
+    "SafariConverterLib": {
+      "version": "4.3.0",
+      "requirement": "exact",
+      "revision": "7a2e93f0afa70479cc59985f332025236c3f0c39",
+      "direct": true,
+      "license": "GPL-3.0-only",
+      "url": "https://github.com/AdguardTeam/SafariConverterLib",
+      "products": ["ContentBlockerConverter"],
+      "minXcode": "16.3",
+      "note": "Converts filter lists to WKContentRuleList JSON plus advanced rules; its FilterEngine answers per-URL cosmetic and scriptlet queries in the app.",
+      "bundledScriptlets": "2.3.1",
+      "bundledExtendedCss": "2.1.1",
+      "versionSkewNote": "ContentBlockerConverterVersion in 4.3.0 reports scriptlets 2.3.1 and extendedCss 2.1.1. The app deliberately ships the newer 2.5.1 / 2.2.1 (see the adguard block): the converter only validates and passes scriptlet names through, so a newer runtime is a superset. `JanusConvert version` prints the library numbers so the gap stays visible."
+    },
+    "swift-argument-parser": {
+      "version": "1.5.0",
+      "requirement": "exact",
+      "revision": "41982a3656a71c768319979febd796c6fd111d5c",
+      "direct": true,
+      "license": "Apache-2.0",
+      "url": "https://github.com/apple/swift-argument-parser",
+      "note": "Same version SafariConverterLib pins, so SwiftPM resolves one copy."
+    },
+    "PunycodeSwift": {
+      "version": "3.0.0",
+      "requirement": "transitive",
+      "revision": "30a462bdb4398ea835a3585472229e0d74b36ba5",
+      "direct": false,
+      "license": "MIT",
+      "url": "https://github.com/gumob/PunycodeSwift",
+      "note": "Resolved through SafariConverterLib. Recorded so Package.resolved stays reviewable."
+    },
+    "swift-psl": {
+      "version": "1.1.43",
+      "requirement": "transitive",
+      "revision": "7ccee9d576d4ca45219440e346f61117f44c816f",
+      "direct": false,
+      "license": "MIT",
+      "url": "https://github.com/ameshkov/swift-psl",
+      "note": "Resolved through SafariConverterLib. Recorded so Package.resolved stays reviewable."
+    }
+  },
+  "adguard": {
+    "scriptlets": {
+      "version": "2.5.1",
+      "license": "GPL-3.0-only",
+      "url": "https://github.com/AdguardTeam/Scriptlets",
+      "note": "Scriptlet function bodies and redirect resources ship inside the app. A bundle carries only scriptlet names and arguments, never code."
+    },
+    "extendedCss": {
+      "version": "2.2.1",
+      "license": "GPL-3.0-only",
+      "url": "https://github.com/AdguardTeam/ExtendedCss",
+      "note": "Runs procedural cosmetic rules in the app; the pipeline only routes rules to the advanced-rules payload."
+    }
+  },
+  "signing": {
+    "algorithm": "Ed25519",
+    "publicKeyBase64": "wFAZ/lFdpErWYl+lJvB02kKnHUOoKm9qqhgJckY8oAY=",
+    "keyId": "d6ff9fb88ae9b930",
+    "secretName": "JANUS_FILTER_SIGNING_KEY",
+    "environment": "filters-release",
+    "note": "The public key and its id are public by design. The private key exists only as a GitHub environment secret, is read from the environment by the sign stage, and is never written, logged or uploaded."
+  },
+  "publish": {
+    "repo": "mioutic/janus-filters",
+    "releaseTagPrefix": "filters-",
+    "releaseBase": "https://github.com/mioutic/janus-filters/releases/download/",
+    "latestBase": "https://github.com/mioutic/janus-filters/releases/latest/download/",
+    "pagesBase": "https://mioutic.github.io/janus-filters/",
+    "draftRetentionDays": 7
+  },
+  "budgets": {
+    "softCapRules": 80000,
+    "hardCapRules": 110000,
+    "compileBudgetMs": 20000,
+    "maxBisect": 12,
+    "manifestMaxBytes": 4194304,
+    "maxBundleAgeDays": 14,
+    "cacheWarnDays": 7,
+    "cacheFailDays": 14
+  },
+  "actions": {
+    "actions/checkout": {
+      "version": "v7.0.1",
+      "sha": "3d3c42e5aac5ba805825da76410c181273ba90b1"
+    },
+    "actions/setup-node": {
+      "version": "v7.0.0",
+      "sha": "820762786026740c76f36085b0efc47a31fe5020"
+    },
+    "actions/cache": {
+      "version": "v6.1.0",
+      "sha": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9"
+    },
+    "actions/upload-artifact": {
+      "version": "v7.0.1",
+      "sha": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
+    },
+    "actions/download-artifact": {
+      "version": "v8.0.1",
+      "sha": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c"
+    },
+    "actions/configure-pages": {
+      "version": "v6.0.0",
+      "sha": "45bfe0192ca1faeb007ade9deae92b16b8254a0d"
+    },
+    "actions/upload-pages-artifact": {
+      "version": "v5.0.0",
+      "sha": "fc324d3547104276b827a68afc52ff2a11cc49c9"
+    },
+    "actions/deploy-pages": {
+      "version": "v5.0.1",
+      "sha": "368f82528645a54fb793d4d04e342629a3f51346"
+    }
+  },
+  "notice": {
+    "software": [
+      {
+        "name": "SafariConverterLib",
+        "version": "4.3.0",
+        "license": "GPL-3.0-only",
+        "url": "https://github.com/AdguardTeam/SafariConverterLib",
+        "note": "Copyright (C) AdGuard Software Ltd. Used by Tools/JanusConvert to produce WKContentRuleList JSON and the advanced-rules payload. Because it is GPL-3.0, our code is GPL-3.0-or-later."
+      },
+      {
+        "name": "@adguard/scriptlets",
+        "version": "2.5.1",
+        "license": "GPL-3.0-only",
+        "url": "https://github.com/AdguardTeam/Scriptlets",
+        "note": "Copyright (C) AdGuard Software Ltd. Scriptlet bodies and redirect resources; bundled by the Janus app, referenced by name in these bundles."
+      },
+      {
+        "name": "@adguard/extended-css",
+        "version": "2.2.1",
+        "license": "GPL-3.0-only",
+        "url": "https://github.com/AdguardTeam/ExtendedCss",
+        "note": "Copyright (C) AdGuard Software Ltd. Procedural cosmetic engine in the Janus app."
+      },
+      {
+        "name": "swift-argument-parser",
+        "version": "1.5.0",
+        "license": "Apache-2.0",
+        "url": "https://github.com/apple/swift-argument-parser",
+        "note": "Copyright (C) Apple Inc. Command-line parsing for the two macOS build tools."
+      },
+      {
+        "name": "PunycodeSwift",
+        "version": "3.0.0",
+        "license": "MIT",
+        "url": "https://github.com/gumob/PunycodeSwift",
+        "note": "Copyright (C) 2018 Kojiro Futamura. Resolved through SafariConverterLib; used by the CI-only conversion tool."
+      },
+      {
+        "name": "swift-psl",
+        "version": "1.1.43",
+        "license": "MIT",
+        "url": "https://github.com/ameshkov/swift-psl",
+        "note": "Copyright (C) Andrey Meshkov. Resolved through SafariConverterLib; used by the CI-only conversion tool."
+      }
+    ]
+  }
+}

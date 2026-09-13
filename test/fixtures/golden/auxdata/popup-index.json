@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "domains": [
+    "another-popup.example",
+    "host.example",
+    "popads.example",
+    "popunder.example",
+    "torrent.example"
+  ]
+}

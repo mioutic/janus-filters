@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "note": "PIPELINE section 8. mode design is DESIGN 3.2's line: untrusted lists keep network rules, cosmetic rules and ordinary scriptlet invocations, and lose raw #%# JavaScript plus trusted-* scriptlets. mode strict additionally drops every scriptlet invocation from untrusted lists. Changing the mode is a reviewed change with a visible diff in the dropped report.",
+  "mode": "design",
+  "strippedModifiers": [
+    "jsinject",
+    "stealth",
+    "extension",
+    "app",
+    "hls",
+    "jsonprune",
+    "xmlprune",
+    "replace",
+    "urltransform",
+    "removeheader"
+  ],
+  "trustedScriptletPrefix": "trusted-"
+}

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "global": [
+    "fbclid",
+    "utm_medium",
+    "utm_source"
+  ],
+  "byDomain": {
+    "example.com": [
+      "pd_rd_r",
+      "ref",
+      "utm_source"
+    ],
+    "shop.example": [
+      "ref"
+    ]
+  },
+  "regex": [
+    {
+      "domains": [
+        "example.com"
+      ],
+      "pattern": "^ad_[0-9]+$"
+    },
+    {
+      "domains": [
+        "shop.example"
+      ],
+      "pattern": "^ad_[0-9]+$"
+    }
+  ]
+}

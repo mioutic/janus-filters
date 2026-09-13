@@ -1,0 +1,44 @@
+[Adblock Plus 2.0]
+! Title: Fixture AdGuard Base
+! Version: 1
+! A network block, a host-anchored block and an important block.
+||ads.example.com^$third-party
+||tracker.example.com/track.js$script
+||EXAMPLE-UPPER.com^
+||ads.example.co.uk^$important
+||securepubads.g.doubleclick.net/tag/js/gpt.js$script
+||imasdk.googleapis.com/js/sdkloader/ima3.js$script
+||pagead2.googlesyndication.com/pagead/js/adsbygoogle.js$script
+! A rule written with the options in a different order: dedupe must fold it.
+||ads.example.com^$third-party
+||ads.example.com^$script,third-party
+||ads.example.com^$third-party,script
+! Exceptions of each kind.
+@@||ads.example.com/allowed.js$script
+@@||example.org^$document
+@@||ads.example.com^$important
+@@/banner/$image
+! Cosmetic rules, generic and specific.
+##.generic-advert
+##div[id^="ad-slot"]
+example.com##.sidebar-ad
+example.com,example.org##.promo
+~sub.example.com,example.com##.tracked
+! Modifiers the converter cannot express: these must reach the dropped report.
+||example.com^$csp=script-src 'self'
+$csp=frame-src 'none'
+||example.com/path$replace=/ad//
+||example.com^$removeparam=utm_source
+||shop.example.com^$removeparam=ref|pd_rd_r
+||example.com^$removeparam=/^ad_[0-9]+$/
+||example.com^$removeheader=refresh
+! A popup rule feeds both the network buckets and the popup index.
+||popads.example^$popup
+$popup,third-party,domain=torrent.example
+! An IDN host must be punycoded.
+||пример.example^
+! A hosts-style line in an adblock list is just a rule.
+||0.0.0.0.example^
+! A control character below U+0020 is rejected.
+! Bad IDN below.
+||xn--.example^

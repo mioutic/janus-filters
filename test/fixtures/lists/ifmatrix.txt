@@ -1,0 +1,30 @@
+! Title: Fixture !#if matrix
+!#if env_safari
+||if-safari.example^
+!#else
+||if-not-safari.example^
+!#endif
+!#if adguard
+||if-adguard.example^
+!#endif
+!#if env_safari && !env_mv3
+||if-and-not.example^
+!#endif
+!#if (env_mv3 || ext_ublock) && env_mobile
+||if-parens.example^
+!#endif
+!#if cap_html_filtering
+||if-html.example^
+!#else
+||if-html-else.example^
+!#endif
+!#if env_futurecap
+||if-unknown.example^
+!#endif
+!#if env_safari &&
+||if-malformed.example^
+!#endif
+!#safari_cb_affinity(social,privacy)
+||if-affinity.example^
+!#safari_cb_affinity
+||if-after-affinity.example^

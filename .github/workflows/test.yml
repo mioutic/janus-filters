@@ -1,0 +1,164 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# The gate that must be green before anything merges to main (PIPELINE 17.4).
+# No network beyond npm, no macOS in the first job, no secrets anywhere.
+
+name: test
+
+on:
+  # Only the default branch on push: pull_request already covers topic branches,
+  # and an unfiltered push trigger runs every job twice for a pull request (the
+  # concurrency group keys on github.ref, which differs between the two events).
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "24"
+
+jobs:
+  node:
+    name: node (ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Cache npm
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: npm-
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Pins and hygiene
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # --online resolves every actions/* tag, SwiftPM tag and npm integrity
+        # upstream; without it the checks only prove the repo agrees with itself.
+        run: node scripts/pin-check.mjs --online
+
+      - name: Generated files are up to date
+        run: |
+          npm run alias:check
+          npm run notice:check
+
+      - name: Dry run against the fixtures
+        # Every stage that does not need macOS, offline, on the fixture lists.
+        run: npm run dry-run
+
+      - name: Upload the dry-run tree
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dry-run-build-${{ github.run_id }}
+          path: build/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  swift-build:
+    name: swift build (macOS)
+    runs-on: macos-26
+    # Fork pull requests do not get macOS minutes: `swift build` runs the
+    # package's own manifest and plugins, so a fork PR would execute its code on
+    # our runner. No secrets are reachable either way; this is cost and abuse.
+    if: >-
+      github.event_name == 'pull_request'
+      && github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Did Tools/ change?
+        id: changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" | grep -q '^Tools/'; then
+            echo "tools=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "tools=false" >> "$GITHUB_OUTPUT"
+            echo "no change under Tools/; skipping the Swift build"
+          fi
+
+      - name: Select and report the toolchain
+        if: steps.changes.outputs.tools == 'true'
+        run: |
+          if [ -d /Applications/Xcode_26.6.app ]; then
+            sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+          fi
+          xcodebuild -version
+          swift --version
+
+      - name: Cache SwiftPM
+        if: steps.changes.outputs.tools == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm
+          key: spm-${{ runner.os }}-${{ hashFiles('Tools/**/Package.resolved') }}-xcode26.6
+          restore-keys: spm-${{ runner.os }}-
+
+      - name: Cache Swift build products
+        if: steps.changes.outputs.tools == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            Tools/JanusConvert/.build
+            Tools/RuleListValidate/.build
+          key: swiftbuild-${{ hashFiles('Tools/**/*.swift', 'Tools/**/Package.resolved') }}-xcode26.6
+          restore-keys: swiftbuild-
+
+      - name: Build both tools
+        if: steps.changes.outputs.tools == 'true'
+        # Compile and unit-test only: this job converts nothing. It exists so a
+        # Swift syntax error is caught by the pull request, not by the nightly.
+        run: |
+          set -euo pipefail
+          swift build -c release --package-path Tools/JanusConvert
+          swift build -c release --package-path Tools/RuleListValidate
+          # Captured once: a package with no test target reports "no tests found",
+          # which is not a failure, and re-running the whole suite just to grep its
+          # output would double the macOS time of this check every time.
+          for package in JanusConvert RuleListValidate; do
+            out="$(swift test --package-path "Tools/${package}" 2>&1)" || {
+              status=$?
+              if printf '%s' "${out}" | grep -qi "no tests found"; then
+                echo "${package} has no test target yet"
+              else
+                printf '%s\n' "${out}"
+                exit "${status}"
+              fi
+            }
+          done

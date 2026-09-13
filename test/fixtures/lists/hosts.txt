@@ -1,0 +1,10 @@
+# Fixture hosts file
+0.0.0.0 ads.hosts.example
+0.0.0.0 beacon.hosts.example tracker.hosts.example
+127.0.0.1 localhost
+127.0.0.1 pixel.hosts.example
+::1 ip6.hosts.example
+192.168.1.1 not-a-sink.example
+0.0.0.0 broadcasthost
+0.0.0.0 nodot
+0.0.0.0 xn--e1afmkfd.example # trailing comment

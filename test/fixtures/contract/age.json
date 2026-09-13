@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "item": "CONTRACT 14.6 age arithmetic",
+  "note": "A candidate manifest is rejected once it is 14 days old or more, and rejected if issuedAt is more than 24 h in the future. expiresAt is always issuedAt + 14 days.",
+  "maxAgeDays": 14,
+  "maxSkewHours": 24,
+  "vectors": [
+    {
+      "why": "13 d 23 h old: accepted",
+      "issuedAt": "2026-08-30T05:17:00Z",
+      "now": "2026-09-13T04:17:00Z",
+      "accept": true
+    },
+    {
+      "why": "exactly 14 d old: rejected",
+      "issuedAt": "2026-08-30T04:17:00Z",
+      "now": "2026-09-13T04:17:00Z",
+      "accept": false
+    },
+    {
+      "why": "14 d 1 s old: rejected",
+      "issuedAt": "2026-08-30T04:16:59Z",
+      "now": "2026-09-13T04:17:00Z",
+      "accept": false
+    },
+    {
+      "why": "23 h in the future: accepted",
+      "issuedAt": "2026-09-14T03:17:00Z",
+      "now": "2026-09-13T04:17:00Z",
+      "accept": true
+    },
+    {
+      "why": "25 h in the future: rejected",
+      "issuedAt": "2026-09-14T05:17:00Z",
+      "now": "2026-09-13T04:17:00Z",
+      "accept": false
+    }
+  ]
+}

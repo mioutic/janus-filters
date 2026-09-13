@@ -1,0 +1,369 @@
+NOTICE for janus-filters
+========================
+
+This file is generated. Do not edit it by hand: run `npm run notice` after
+changing lists.json or VERSIONS.json. `npm run notice:check` fails the build
+when it is out of date.
+
+janus-filters builds the compiled filter bundles used by the Janus browser.
+
+    Copyright (C) 2026 the Janus filters authors
+
+    This program is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by the Free
+    Software Foundation, either version 3 of the License, or (at your option)
+    any later version. See LICENSE for the full text.
+
+This repository is public and contains no personal data: no browsing history, no
+device identifiers, no account information. The only secret involved in a release
+is the bundle signing key, which exists solely as a GitHub environment secret and
+is read from the environment inside one CI job.
+
+The published bundles are derived works of the filter lists below. Each list keeps
+its own licence and its own copyright holders; redistribution of a bundle carries
+those terms with it. Where a list is licensed GPL-3.0 or CC BY-SA, the bundle is
+distributed under the same terms, with attribution preserved here.
+
+Filter lists
+------------
+
+27 lists, sorted by id. "default" means the list is on for a fresh install;
+"trust" is the CI trust level (an untrusted list is reduced to network and
+cosmetic rules before conversion).
+
+### AdGuard Base filter (adguard.base)
+
+    Attribution: AdGuard Base filter (c) AdGuard Software Ltd.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/AdguardTeam/AdguardFilters/blob/master/LICENSE
+    Homepage:    https://adguard.com/kb/general/ad-filtering/adguard-filters/
+    Source:      https://filters.adtidy.org/ios/filters/2.txt
+    Mirror:      https://filters.adtidy.org/extension/safari/filters/2.txt
+    Flags:       trust=trusted, default=on, role=rules
+    Notes:       Includes EasyList; never add EasyList separately (DESIGN 3.2).
+
+### AdGuard Cookie Notices filter (adguard.cookie-notices)
+
+    Attribution: AdGuard Cookie Notices filter (c) AdGuard Software Ltd.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/AdguardTeam/AdguardFilters/blob/master/LICENSE
+    Homepage:    https://adguard.com/kb/general/ad-filtering/adguard-filters/
+    Source:      https://filters.adtidy.org/ios/filters/18.txt
+    Mirror:      https://filters.adtidy.org/extension/safari/filters/18.txt
+    Flags:       trust=trusted, default=on, role=rules
+
+### AdGuard Mobile Ads filter (adguard.mobile-ads)
+
+    Attribution: AdGuard Mobile Ads filter (c) AdGuard Software Ltd.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/AdguardTeam/AdguardFilters/blob/master/LICENSE
+    Homepage:    https://adguard.com/kb/general/ad-filtering/adguard-filters/
+    Source:      https://filters.adtidy.org/ios/filters/11.txt
+    Mirror:      https://filters.adtidy.org/extension/safari/filters/11.txt
+    Flags:       trust=trusted, default=on, role=rules
+    Notes:       Mobile-specific ad rules; the iOS flavour of the same upstream source.
+
+### AdGuard Mobile App Banners filter (adguard.mobile-app-banners)
+
+    Attribution: AdGuard Mobile App Banners filter (c) AdGuard Software Ltd.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/AdguardTeam/AdguardFilters/blob/master/LICENSE
+    Homepage:    https://adguard.com/kb/general/ad-filtering/adguard-filters/
+    Source:      https://filters.adtidy.org/ios/filters/20.txt
+    Mirror:      https://filters.adtidy.org/extension/safari/filters/20.txt
+    Flags:       trust=trusted, default=on, role=rules
+
+### AdGuard Other Annoyances filter (adguard.other-annoyances)
+
+    Attribution: AdGuard Other Annoyances filter (c) AdGuard Software Ltd.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/AdguardTeam/AdguardFilters/blob/master/LICENSE
+    Homepage:    https://adguard.com/kb/general/ad-filtering/adguard-filters/
+    Source:      https://filters.adtidy.org/ios/filters/21.txt
+    Mirror:      https://filters.adtidy.org/extension/safari/filters/21.txt
+    Flags:       trust=trusted, default=on, role=rules
+
+### AdGuard Popups filter (adguard.popups)
+
+    Attribution: AdGuard Popups filter (c) AdGuard Software Ltd.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/AdguardTeam/AdguardFilters/blob/master/LICENSE
+    Homepage:    https://adguard.com/kb/general/ad-filtering/adguard-filters/
+    Source:      https://filters.adtidy.org/ios/filters/19.txt
+    Mirror:      https://filters.adtidy.org/extension/safari/filters/19.txt
+    Flags:       trust=trusted, default=on, role=rules
+    Notes:       Its $popup rules also feed the popup-domain index (PIPELINE 9.4).
+
+### AdGuard Social Media filter (adguard.social)
+
+    Attribution: AdGuard Social Media filter (c) AdGuard Software Ltd.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/AdguardTeam/AdguardFilters/blob/master/LICENSE
+    Homepage:    https://adguard.com/kb/general/ad-filtering/adguard-filters/
+    Source:      https://filters.adtidy.org/ios/filters/4.txt
+    Mirror:      https://filters.adtidy.org/extension/safari/filters/4.txt
+    Flags:       trust=trusted, default=off, role=rules
+    Notes:       Opt-in: built and published every day, enabled only if the owner turns it on.
+
+### AdGuard Tracking Protection filter (adguard.tracking)
+
+    Attribution: AdGuard Tracking Protection filter (c) AdGuard Software Ltd.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/AdguardTeam/AdguardFilters/blob/master/LICENSE
+    Homepage:    https://adguard.com/kb/general/ad-filtering/adguard-filters/
+    Source:      https://filters.adtidy.org/ios/filters/3.txt
+    Mirror:      https://filters.adtidy.org/extension/safari/filters/3.txt
+    Flags:       trust=trusted, default=off, role=rules
+    Notes:       Opt-in, large (about 105k iOS lines). Its bucket count comes from converter output, never from source lines (DESIGN 1.3); see config/buckets.json optIn.
+
+### AdGuard Annoyances (Widgets) filter (adguard.widgets)
+
+    Attribution: AdGuard Widgets filter (c) AdGuard Software Ltd.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/AdguardTeam/AdguardFilters/blob/master/LICENSE
+    Homepage:    https://adguard.com/kb/general/ad-filtering/adguard-filters/
+    Source:      https://filters.adtidy.org/ios/filters/22.txt
+    Mirror:      https://filters.adtidy.org/extension/safari/filters/22.txt
+    Flags:       trust=trusted, default=off, role=rules
+    Notes:       Opt-in.
+
+### EasyList Chat (easylist.chat)
+
+    Attribution: EasyList Chat (c) The EasyList authors, dual-licensed GPLv3 / CC BY-SA 3.0.
+    Licence:     GPL-3.0-or-later OR CC-BY-SA-3.0
+    Licence URL: https://easylist.to/pages/licence.html
+    Homepage:    https://easylist.to/
+    Source:      https://ublockorigin.github.io/uAssets/thirdparties/easylist-chat.txt
+    Flags:       trust=untrusted, default=off, role=rules
+    Notes:       Opt-in.
+
+### EasyList Newsletters (easylist.newsletters)
+
+    Attribution: EasyList Newsletters (c) The EasyList authors, dual-licensed GPLv3 / CC BY-SA 3.0.
+    Licence:     GPL-3.0-or-later OR CC-BY-SA-3.0
+    Licence URL: https://easylist.to/pages/licence.html
+    Homepage:    https://easylist.to/
+    Source:      https://ublockorigin.github.io/uAssets/thirdparties/easylist-newsletters.txt
+    Flags:       trust=untrusted, default=off, role=rules
+    Notes:       Opt-in.
+
+### EasyList Notifications (easylist.notifications)
+
+    Attribution: EasyList Notifications (c) The EasyList authors, dual-licensed GPLv3 / CC BY-SA 3.0.
+    Licence:     GPL-3.0-or-later OR CC-BY-SA-3.0
+    Licence URL: https://easylist.to/pages/licence.html
+    Homepage:    https://easylist.to/
+    Source:      https://ublockorigin.github.io/uAssets/thirdparties/easylist-notifications.txt
+    Mirror:      https://secure.fanboy.co.nz/fanboy-notifications.txt
+    Flags:       trust=untrusted, default=on, role=rules
+
+### EasyList popup rules (ad servers) (easylist.popups-adservers)
+
+    Attribution: EasyList (c) The EasyList authors, dual-licensed GPLv3 / CC BY-SA 3.0.
+    Licence:     GPL-3.0-or-later OR CC-BY-SA-3.0
+    Licence URL: https://easylist.to/pages/licence.html
+    Homepage:    https://easylist.to/
+    Source:      https://raw.githubusercontent.com/easylist/easylist/master/easylist/easylist_adservers_popup.txt
+    Flags:       trust=untrusted, default=on, role=popup-index
+    Notes:       Consumed only by the popup-domain index builder (PIPELINE 9.4); its rules are already in AdGuard Base.
+
+### EasyList popup rules (site-specific) (easylist.popups-specific)
+
+    Attribution: EasyList (c) The EasyList authors, dual-licensed GPLv3 / CC BY-SA 3.0.
+    Licence:     GPL-3.0-or-later OR CC-BY-SA-3.0
+    Licence URL: https://easylist.to/pages/licence.html
+    Homepage:    https://easylist.to/
+    Source:      https://raw.githubusercontent.com/easylist/easylist/master/easylist/easylist_specific_block_popup.txt
+    Flags:       trust=untrusted, default=on, role=popup-index
+    Notes:       Consumed only by the popup-domain index builder (PIPELINE 9.4).
+
+### EasyPrivacy (easylist.privacy)
+
+    Attribution: EasyPrivacy (c) The EasyList authors, dual-licensed GPLv3 / CC BY-SA 3.0.
+    Licence:     GPL-3.0-or-later OR CC-BY-SA-3.0
+    Licence URL: https://easylist.to/pages/licence.html
+    Homepage:    https://easylist.to/
+    Source:      https://ublockorigin.github.io/uAssets/thirdparties/easyprivacy.txt
+    Mirror:      https://easylist.to/easylist/easyprivacy.txt
+    Mirror:      https://secure.fanboy.co.nz/easyprivacy.txt
+    Flags:       trust=untrusted, default=on, role=rules
+    Notes:       Untrusted per DESIGN 3.2: only AdGuard official lists, uAssets and the Janus list are trusted.
+
+### EasyList Social (Fanboy's Social Blocking List) (easylist.social)
+
+    Attribution: Fanboy's Social Blocking List (c) The EasyList authors, dual-licensed GPLv3 / CC BY-SA 3.0.
+    Licence:     GPL-3.0-or-later OR CC-BY-SA-3.0
+    Licence URL: https://easylist.to/pages/licence.html
+    Homepage:    https://easylist.to/
+    Source:      https://ublockorigin.github.io/uAssets/thirdparties/easylist-social.txt
+    Mirror:      https://secure.fanboy.co.nz/fanboy-social.txt
+    Flags:       trust=untrusted, default=off, role=rules
+    Notes:       Opt-in.
+
+### Janus site-fix list (janus.sitefix)
+
+    Attribution: Janus site-fix list (c) the janus-filters contributors, GPL-3.0-or-later.
+    Licence:     GPL-3.0-or-later
+    Licence URL: https://github.com/mioutic/janus-filters/blob/main/LICENSE
+    Homepage:    https://github.com/mioutic/janus-filters
+    Source:      file:config/sitefix.txt
+    Flags:       trust=trusted, default=on, role=sitefix
+    Notes:       Never fetched: copied from config/sitefix.txt by the fetch stage (PIPELINE 6).
+
+### Peter Lowe's Ad and tracking server list (peterlowe.serverlist)
+
+    Attribution: Ad and tracking server list (c) Peter Lowe, pgl.yoyo.org.
+    Licence:     LicenseRef-McRae-GPL-4.r53
+    Licence URL: https://pgl.yoyo.org/license/
+    Homepage:    https://pgl.yoyo.org/adservers/
+    Source:      https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext
+    Mirror:      https://raw.githubusercontent.com/StevenBlack/hosts/master/data/yoyo.org/hosts
+    Flags:       trust=untrusted, default=on, role=rules
+    Notes:       Non-commercial use only; Janus is a personal, non-commercial browser. Hosts format, rewritten in preprocess (PIPELINE 7.4).
+
+### uBlock Origin annoyances (cookie notices) (ubo.annoyances-cookies)
+
+    Attribution: uBlock Origin filter lists (c) Raymond Hill and uAssets contributors.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/uBlockOrigin/uAssets/blob/master/LICENSE
+    Homepage:    https://github.com/uBlockOrigin/uAssets
+    Source:      https://ublockorigin.github.io/uAssets/filters/annoyances-cookies.txt
+    Mirror:      https://ublockorigin.github.io/uAssetsCDN/filters/annoyances-cookies.txt
+    Mirror:      https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/annoyances-cookies.txt
+    Flags:       trust=trusted, default=on, role=rules
+
+### uBlock Origin annoyances (other) (ubo.annoyances-others)
+
+    Attribution: uBlock Origin filter lists (c) Raymond Hill and uAssets contributors.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/uBlockOrigin/uAssets/blob/master/LICENSE
+    Homepage:    https://github.com/uBlockOrigin/uAssets
+    Source:      https://ublockorigin.github.io/uAssets/filters/annoyances-others.txt
+    Mirror:      https://ublockorigin.github.io/uAssetsCDN/filters/annoyances-others.txt
+    Mirror:      https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/annoyances-others.txt
+    Flags:       trust=trusted, default=on, role=rules
+
+### uBlock Origin badware risks (ubo.badware)
+
+    Attribution: uBlock Origin filter lists (c) Raymond Hill and uAssets contributors.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/uBlockOrigin/uAssets/blob/master/LICENSE
+    Homepage:    https://github.com/uBlockOrigin/uAssets
+    Source:      https://ublockorigin.github.io/uAssets/filters/badware.txt
+    Mirror:      https://ublockorigin.github.io/uAssetsCDN/filters/badware.txt
+    Mirror:      https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/badware.txt
+    Flags:       trust=trusted, default=on, role=rules
+    Notes:       Routed to net.security, which DESIGN 3.7 keeps enabled on allowlisted sites.
+
+### uBlock Origin filters (ubo.filters)
+
+    Attribution: uBlock Origin filter lists (c) Raymond Hill and uAssets contributors.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/uBlockOrigin/uAssets/blob/master/LICENSE
+    Homepage:    https://github.com/uBlockOrigin/uAssets
+    Source:      https://ublockorigin.github.io/uAssets/filters/filters.txt
+    Mirror:      https://ublockorigin.github.io/uAssetsCDN/filters/filters.txt
+    Mirror:      https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.txt
+    Flags:       trust=trusted, default=on, role=rules
+    Notes:       uAssets is trusted per DESIGN 3.2, so trusted-* scriptlets and #%# bodies survive the gate.
+
+### uBlock Origin privacy (ubo.privacy)
+
+    Attribution: uBlock Origin filter lists (c) Raymond Hill and uAssets contributors.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/uBlockOrigin/uAssets/blob/master/LICENSE
+    Homepage:    https://github.com/uBlockOrigin/uAssets
+    Source:      https://ublockorigin.github.io/uAssets/filters/privacy.txt
+    Mirror:      https://ublockorigin.github.io/uAssetsCDN/filters/privacy.txt
+    Mirror:      https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/privacy.txt
+    Flags:       trust=trusted, default=on, role=rules
+
+### AdGuard/uBO URL Tracking Protection ($removeparam) (ubo.privacy-removeparam)
+
+    Attribution: uBlock Origin URL tracking protection list (c) Raymond Hill and uAssets contributors.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/uBlockOrigin/uAssets/blob/master/LICENSE
+    Homepage:    https://github.com/uBlockOrigin/uAssets
+    Source:      https://ublockorigin.github.io/uAssets/filters/privacy-removeparam.txt
+    Mirror:      https://ublockorigin.github.io/uAssetsCDN/filters/privacy-removeparam.txt
+    Mirror:      https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/privacy-removeparam.txt
+    Flags:       trust=trusted, default=on, role=removeparam
+    Notes:       LinkCleaner only (DESIGN 3.2): contributes no content rules, only build/aux/linkcleaner.json.
+
+### uBlock Origin quick fixes (ubo.quick-fixes)
+
+    Attribution: uBlock Origin filter lists (c) Raymond Hill and uAssets contributors.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/uBlockOrigin/uAssets/blob/master/LICENSE
+    Homepage:    https://github.com/uBlockOrigin/uAssets
+    Source:      https://ublockorigin.github.io/uAssets/filters/quick-fixes.txt
+    Mirror:      https://ublockorigin.github.io/uAssetsCDN/filters/quick-fixes.txt
+    Mirror:      https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/quick-fixes.txt
+    Flags:       trust=trusted, default=on, role=rules
+    Notes:       Fast-moving breakage fixes; must be fetched daily to be worth anything.
+
+### uBlock Origin unbreak (ubo.unbreak)
+
+    Attribution: uBlock Origin filter lists (c) Raymond Hill and uAssets contributors.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/uBlockOrigin/uAssets/blob/master/LICENSE
+    Homepage:    https://github.com/uBlockOrigin/uAssets
+    Source:      https://ublockorigin.github.io/uAssets/filters/unbreak.txt
+    Mirror:      https://ublockorigin.github.io/uAssetsCDN/filters/unbreak.txt
+    Mirror:      https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/unbreak.txt
+    Flags:       trust=trusted, default=on, role=rules
+    Notes:       Source of most exceptions and of the $badfilter rules that disable other lists' rules (PIPELINE 7.5).
+
+### Online Malicious URL Blocklist (AdGuard syntax) (urlhaus.online)
+
+    Attribution: Online Malicious URL Blocklist (c) Ming Di Leom, built from abuse.ch URLhaus data (CC0-1.0).
+    Licence:     MIT
+    Licence URL: https://gitlab.com/malware-filter/urlhaus-filter/-/blob/main/LICENSE
+    Homepage:    https://gitlab.com/malware-filter/urlhaus-filter
+    Source:      https://malware-filter.gitlab.io/urlhaus-filter/urlhaus-filter-ag-online.txt
+    Mirror:      https://curbengh.github.io/malware-filter/urlhaus-filter-ag-online.txt
+    Mirror:      https://malware-filter.pages.dev/urlhaus-filter-ag-online.txt
+    Flags:       trust=untrusted, default=on, role=rules
+    Notes:       Routed to net.security, which stays enabled on allowlisted sites (DESIGN 3.7).
+
+Third-party software
+--------------------
+
+Used by the build pipeline, or bundled into the Janus app alongside these
+bundles. Versions are pinned in VERSIONS.json.
+
+### @adguard/extended-css 2.2.1
+
+    Licence: GPL-3.0-only
+    Source:  https://github.com/AdguardTeam/ExtendedCss
+    Note:    Copyright (C) AdGuard Software Ltd. Procedural cosmetic engine in the Janus app.
+
+### @adguard/scriptlets 2.5.1
+
+    Licence: GPL-3.0-only
+    Source:  https://github.com/AdguardTeam/Scriptlets
+    Note:    Copyright (C) AdGuard Software Ltd. Scriptlet bodies and redirect resources; bundled by the Janus app, referenced by name in these bundles.
+
+### PunycodeSwift 3.0.0
+
+    Licence: MIT
+    Source:  https://github.com/gumob/PunycodeSwift
+    Note:    Copyright (C) 2018 Kojiro Futamura. Resolved through SafariConverterLib; used by the CI-only conversion tool.
+
+### SafariConverterLib 4.3.0
+
+    Licence: GPL-3.0-only
+    Source:  https://github.com/AdguardTeam/SafariConverterLib
+    Note:    Copyright (C) AdGuard Software Ltd. Used by Tools/JanusConvert to produce WKContentRuleList JSON and the advanced-rules payload. Because it is GPL-3.0, our code is GPL-3.0-or-later.
+
+### swift-argument-parser 1.5.0
+
+    Licence: Apache-2.0
+    Source:  https://github.com/apple/swift-argument-parser
+    Note:    Copyright (C) Apple Inc. Command-line parsing for the two macOS build tools.
+
+### swift-psl 1.1.43
+
+    Licence: MIT
+    Source:  https://github.com/ameshkov/swift-psl
+    Note:    Copyright (C) Andrey Meshkov. Resolved through SafariConverterLib; used by the CI-only conversion tool.

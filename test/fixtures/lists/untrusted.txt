@@ -1,0 +1,17 @@
+! Title: Fixture untrusted list
+! Network and cosmetic rules survive the gate.
+||ads.untrusted.example^$third-party
+untrusted.example##.ad
+! Ordinary scriptlets survive: the body ships inside the app.
+untrusted.example#%#//scriptlet('set-constant', 'adblock', 'false')
+! A trusted-* scriptlet does not.
+untrusted.example#%#//scriptlet('trusted-set-cookie', 'consent', 'yes')
+! Raw JavaScript does not.
+untrusted.example#%#window.canRunAds = true;
+! A uBO trusted-* alias does not.
+untrusted.example##+js(trusted-click-element, .accept)
+! Stripped modifiers.
+||untrusted.example^$replace=/a/b/
+||untrusted.example^$jsinject
+||untrusted.example^$removeheader=link
+||untrusted.example^$stealth

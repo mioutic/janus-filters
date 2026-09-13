@@ -1,0 +1,25 @@
+! Title: Fixture uAssets filters
+! uBO scriptlet syntax, which translate rewrites to AdGuard syntax.
+example.com##+js(aopr, adblock)
+example.com##+js(nowoif)
+example.com##+js(rmnt, script, ads)
+video.example##+js(set-cookie, consent, ok)
+! A uBO scriptlet with no AdGuard equivalent: dropped as scriptlet.no-alias.
+example.com##+js(hd-main)
+! AdGuard scriptlet syntax passes through.
+example.org#%#//scriptlet('abort-on-property-read', 'adblock')
+! Raw JavaScript, allowed only because this list is trusted.
+example.org#%#window.__adblock = false;
+! Procedural cosmetics travel as advanced rules, not content rules.
+example.com#?#div:has-text(sponsored)
+example.com#@#.sidebar-ad
+! An unbreak exception that folds into a surrogate as unless-domain.
+@@||securepubads.g.doubleclick.net/tag/js/gpt.js$domain=news.example
+! A global surrogate exception cannot fold: it is appended to janus.active.
+@@||imasdk.googleapis.com/js/sdkloader/ima3.js
+! badfilter disables a rule that came from the AdGuard fixture.
+||tracker.example.com/track.js$script,badfilter
+! An unmatched badfilter is dead weight and is reported.
+||nothing.example^$badfilter
+! A redirect whose resource name is a uBO alias.
+||example.com/ima3.js$script,redirect=google-ima.js

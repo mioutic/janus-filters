@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "item": "CONTRACT 14.3 identifier derivation",
+  "note": "identifier = <bucketId>.<first 8 hex chars of the bucket's uncompressed sha256>",
+  "vectors": [
+    {
+      "bucketId": "janus.net.ads.00",
+      "sha256": "7d2b1f0c9e4a5b6c8d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6",
+      "identifier": "janus.net.ads.00.7d2b1f0c"
+    },
+    {
+      "bucketId": "janus.active",
+      "sha256": "00000000112233445566778899aabbccddeeff00112233445566778899aabbcc",
+      "identifier": "janus.active.00000000"
+    },
+    {
+      "bucketId": "janus.cos.specific.fx-optin.02",
+      "sha256": "ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100",
+      "identifier": "janus.cos.specific.fx-optin.02.ffeeddcc"
+    }
+  ]
+}

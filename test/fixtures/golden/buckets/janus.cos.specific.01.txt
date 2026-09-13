@@ -1,0 +1,2 @@
+video.example#%#//scriptlet('set-cookie', 'consent', 'ok')
+reddit.com##shreddit-ad-post

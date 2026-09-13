@@ -1,0 +1,15 @@
+/^https?://imasdk\.googleapis\.com/js/sdkloader/ima3\.js/$script
+/^https?://s0\.2mdn\.net/instream/html5/ima3\.js/$script
+/^https?://securepubads\.g\.doubleclick\.net/tag/js/gpt\.js/$script,domain=~news.example
+/^https?://pagead2\.googlesyndication\.com/tag/js/gpt\.js/$script,domain=~news.example
+/^https?://www\.googletagservices\.com/tag/js/gpt\.js/$script,domain=~news.example
+/^https?://pagead2\.googlesyndication\.com/pagead/js/adsbygoogle\.js/$script
+/^https?://c\.amazon-adsystem\.com/aax2/apstag\.js/$script
+//prebid[0-9a-z._\-]*\.js/$script
+/^https?://[a-z0-9.\-]*\.g\.doubleclick\.net/gampad/ads.*output=xml_vast/$xmlhttprequest
+/^https?://[a-z0-9.\-]*\.g\.doubleclick\.net/gampad/ads.*output=vast/$xmlhttprequest
+/^https?://[a-z0-9.\-]*\.g\.doubleclick\.net/gampad/ads.*output=vmap/$xmlhttprequest
+/^https?://[a-z0-9.\-]*\.g\.doubleclick\.net/gampad/live/ads.*output=vmap/$xmlhttprequest
+/^https?://[a-z0-9.\-]*\.2mdn\.net/.*\.mp4/$media
+/^https?://[a-z0-9.\-]*\.doubleclick\.net/.*\.mp4/$media
+@@||imasdk.googleapis.com/js/sdkloader/ima3.js

@@ -1,0 +1,6 @@
+! Title: Fixture include chain
+||root.include.example^
+!#include sub/part1.txt
+!#include https://other.example/evil.txt
+!#include include-root.txt
+||after.include.example^

@@ -1,0 +1,61 @@
+||ads.example.com^$third-party
+||example-upper.com^
+||ads.example.co.uk^$important
+||securepubads.g.doubleclick.net/tag/js/gpt.js$script
+||imasdk.googleapis.com/js/sdkloader/ima3.js$script
+||pagead2.googlesyndication.com/pagead/js/adsbygoogle.js$script
+||ads.example.com^$script,third-party
+@@||ads.example.com/allowed.js$script
+@@||example.org^$document
+@@||ads.example.com^$important
+@@/banner/$image
+##.generic-advert
+##div[id^="ad-slot"]
+example.com##.sidebar-ad
+example.com,example.org##.promo
+~sub.example.com,example.com##.tracked
+||example.com/path$replace=/ad//
+||example.com^$removeheader=refresh
+||popads.example^$popup
+$domain=torrent.example,popup,third-party
+||xn--e1afmkfd.example^
+||0.0.0.0.example^
+||xn--.example^
+example.com#%#//scriptlet('abort-on-property-read', 'adblock')
+example.com#%#//scriptlet('prevent-window-open')
+example.com#%#//scriptlet('remove-node-text', 'script', 'ads')
+video.example#%#//scriptlet('set-cookie', 'consent', 'ok')
+example.org#%#//scriptlet('abort-on-property-read', 'adblock')
+example.org#%#window.__adblock = false;
+example.com#?#div:has-text(sponsored)
+example.com#@#.sidebar-ad
+@@||securepubads.g.doubleclick.net/tag/js/gpt.js$domain=news.example
+@@||imasdk.googleapis.com/js/sdkloader/ima3.js
+||example.com/ima3.js$redirect=google-ima3,script
+||ads.untrusted.example^$third-party
+untrusted.example##.ad
+untrusted.example#%#//scriptlet('set-constant', 'adblock', 'false')
+||ads.hosts.example^
+||beacon.hosts.example^
+||tracker.hosts.example^
+||pixel.hosts.example^
+||ip6.hosts.example^
+||root.include.example^
+||part1.include.example^
+||part2.include.example^
+||after.include.example^
+||if-safari.example^
+||if-and-not.example^
+||if-parens.example^
+||if-html-else.example^
+||if-affinity.example^
+||if-after-affinity.example^
+||malware.example^$all
+||phish.example/login^
+@@||safe.example^$document
+reddit.com##shreddit-ad-post
+gofile.io##.ads
+||ads.sitefix.example^
+||optin-tracker.example^$third-party
+optin.example##.tracking-pixel
+@@||optin-tracker.example/allowed.js

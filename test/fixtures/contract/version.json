@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "item": "CONTRACT 14.5 version comparison",
+  "note": "An update is a strictly greater integer. Equal is not an update; lower is a rollback.",
+  "vectors": [
+    {
+      "candidate": 2026091300,
+      "installed": 2026091299,
+      "isUpdate": true
+    },
+    {
+      "candidate": 2026091300,
+      "installed": 2026091300,
+      "isUpdate": false
+    },
+    {
+      "candidate": 2026091299,
+      "installed": 2026091300,
+      "isUpdate": false
+    },
+    {
+      "candidate": 2026091300,
+      "installed": 0,
+      "isUpdate": true
+    },
+    {
+      "candidate": 2026091301,
+      "installed": 2026091300,
+      "isUpdate": true
+    }
+  ]
+}

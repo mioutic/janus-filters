@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "item": "CONTRACT 14.1 keyId derivation",
+  "note": "keyId = SHA-256 of the raw 32 public-key bytes, first 16 lower-case hex chars.",
+  "vectors": [
+    {
+      "publicKeyBase64": "wFAZ/lFdpErWYl+lJvB02kKnHUOoKm9qqhgJckY8oAY=",
+      "keyId": "d6ff9fb88ae9b930",
+      "pinned": true
+    },
+    {
+      "publicKeyBase64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "keyId": "66687aadf862bd77",
+      "pinned": false
+    },
+    {
+      "publicKeyBase64": "//////////////////////////////////////////8=",
+      "keyId": "af9613760f72635f",
+      "pinned": false
+    }
+  ]
+}

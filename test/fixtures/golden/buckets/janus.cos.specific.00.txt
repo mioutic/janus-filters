@@ -1,0 +1,3 @@
+example.org#%#//scriptlet('abort-on-property-read', 'adblock')
+example.org#%#window.__adblock = false;
+gofile.io##.ads

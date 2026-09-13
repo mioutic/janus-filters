@@ -1,0 +1,4 @@
+! Title: Fixture security list
+||malware.example^$all
+||phish.example/login^
+@@||safe.example^$document

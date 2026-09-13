@@ -1,0 +1,8 @@
+# The pipeline compares golden fixtures byte for byte and hashes its own
+# output, so every text file stays LF in the repo AND in the working tree,
+# even when checked out on Windows.
+* text=auto eol=lf
+
+*.png binary
+*.lzfse binary
+*.bin binary

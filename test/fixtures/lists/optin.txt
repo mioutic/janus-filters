@@ -1,0 +1,4 @@
+! Title: Fixture opt-in list
+||optin-tracker.example^$third-party
+optin.example##.tracking-pixel
+@@||optin-tracker.example/allowed.js

@@ -1,0 +1,2 @@
+##.generic-advert
+example.com#@#.sidebar-ad

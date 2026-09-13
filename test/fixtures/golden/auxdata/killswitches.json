@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "note": "Defaults for manifest.killSwitches (CONTRACT 10.4). A switch may only make Janus less active.",
+  "killSwitches": {
+    "listSuppliedJavaScript": true,
+    "scriptlets": true,
+    "surrogates": true,
+    "advancedRules": true,
+    "extendedCss": true
+  }
+}
