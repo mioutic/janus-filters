@@ -74,7 +74,7 @@ jobs:
   live:
     name: live blocking suite
     runs-on: macos-26
-    # 60, not 45: `--budget-min 30` is only checked between work items and one item may
+    # 60, not 45: `--budget-min 45` is only checked between work items and one item may
     # run for budgetMs + 45 s of slack, so the suite can legitimately end near 35 min -
     # and on a cold DerivedData cache the checkout, xcodegen and xcodebuild steps add
     # another 6-10 min before it starts. The suite's own stop must always fire first,
@@ -217,7 +217,7 @@ jobs:
             --runtime "${PROBE_RUNTIME}"
             --repeats "${PROBE_REPEATS}"
             --modes "${PROBE_MODES}"
-            --budget-min 30
+            --budget-min 45
           )
           if [ -n "${PROBE_SCENARIOS}" ]; then args+=(--only "${PROBE_SCENARIOS}"); fi
           if [ "${PROBE_STRICT}" = "true" ]; then args+=(--strict); fi

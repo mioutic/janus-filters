@@ -63,10 +63,10 @@
       "stable": true,
       "tapCentre": false,
       "waitIdleMs": 800,
-      "timeoutMs": 15000,
+      "timeoutMs": 45000,
       "selectors": ["#ad-slot"],
       "expect": { "blockedMin": 1, "domVisibleMax": 0, "allowedMustLoad": true },
-      "notes": "Served by the app's own listener on 127.0.0.1. No network. Its failure aborts the suite. Only #ad-slot is a DOM selector: the fixture keeps #content visible on purpose as proof the page rendered, and domVisibleMax counts every selector in this list, so listing #content here would fail the gate by design. The allowed side is proved by expect.allowedMustLoad plus the run.json fixture block."
+      "notes": "Served by the app's own listener on 127.0.0.1. No network. Its failure aborts the suite. It gets the same 45s timeout as a live page even though it is local: a fresh app launch applies every compiled rule list to its first navigation, which took 25s for 17 lists on a CI runner, and a shorter budget classified the page before it had committed and made the gate abstain. Only #ad-slot is a DOM selector: the fixture keeps #content visible on purpose as proof the page rendered, and domVisibleMax counts every selector in this list, so listing #content here would fail the gate by design. The allowed side is proved by expect.allowedMustLoad plus the run.json fixture block."
     },
     {
       "id": "canyoublockit-extreme",
