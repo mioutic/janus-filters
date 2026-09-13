@@ -15,7 +15,22 @@
     "xcodeMinForSafariConverterLib": "16.3",
     "swiftToolsVersion": "5.9",
     "swiftLanguageMode": "5",
-    "macosPlatformMin": "13"
+    "macosPlatformMin": "13",
+    "xcodegen": {
+      "version": "2.46.0",
+      "repo": "yonaskolb/XcodeGen",
+      "revision": "8445e778451c7e44237b90281bde622d764b0084",
+      "asset": "xcodegen.zip",
+      "url": "https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip",
+      "sha256": "4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806",
+      "sizeBytes": 4278764,
+      "license": "MIT",
+      "note": "Generates Tools/ProbeHost/ProbeHost.xcodeproj in CI; the project file is never committed. Downloaded as the release zip and checked against this sha256 before it runs, because a build tool that executes on the runner is a supply-chain surface: no brew install, no version resolution at run time. The zip unpacks to xcodegen/bin/xcodegen with its SettingPresets beside it in xcodegen/share, so the directory layout must be preserved. Not shipped in any bundle and not part of NOTICE: it produces a project file and nothing of it reaches the app.",
+      "usedBy": [
+        ".github/workflows/live.yml",
+        ".github/workflows/spike.yml"
+      ]
+    }
   },
   "npm": {
     "@adguard/scriptlets": {
@@ -35,7 +50,9 @@
       "direct": true,
       "license": "GPL-3.0-only",
       "url": "https://github.com/AdguardTeam/SafariConverterLib",
-      "products": ["ContentBlockerConverter"],
+      "products": [
+        "ContentBlockerConverter"
+      ],
       "minXcode": "16.3",
       "note": "Converts filter lists to WKContentRuleList JSON plus advanced rules; its FilterEngine answers per-URL cosmetic and scriptlet queries in the app.",
       "bundledScriptlets": "2.3.1",
@@ -108,7 +125,17 @@
     "manifestMaxBytes": 4194304,
     "maxBundleAgeDays": 14,
     "cacheWarnDays": 7,
-    "cacheFailDays": 14
+    "cacheFailDays": 14,
+    "probe": {
+      "jobTimeoutMin": 60,
+      "spikeJobTimeoutMin": 40,
+      "suiteBudgetMin": 30,
+      "artifactRetentionDays": 14,
+      "trendRetentionDays": 90,
+      "spikeRetentionDays": 90,
+      "summaryMaxBytes": 1048576,
+      "note": "M2c measurement budgets. jobTimeoutMin is the workflow ceiling and must never be what stops a run: suiteBudgetMin (Tools/ProbeRunner --budget-min) stops the suite first so the report and the artifacts are still written. summaryMaxBytes is GitHub's 1 MiB cap on a job summary; Tools/ProbeRunner/lib/summary.mjs truncates per-scenario detail against it and keeps the header and the table."
+    }
   },
   "actions": {
     "actions/checkout": {

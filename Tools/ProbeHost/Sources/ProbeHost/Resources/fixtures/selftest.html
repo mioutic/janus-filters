@@ -1,0 +1,50 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: GPL-3.0-or-later
+  selftest.html - the harness self check (00-index.md section 1).
+
+  One request must be blocked (blocked.js) and one must load (allowed.js). Without this
+  page, "0 requests blocked" on a live site would be ambiguous between "the filters did
+  not block" and "the harness is not measuring". #ad-slot is what the self-check rule
+  list hides, so the cosmetic half is checked too.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProbeHost self check</title>
+<style>
+  body { font: 16px -apple-system, sans-serif; margin: 0; padding: 16px; }
+  #ad-slot { background: #c00; color: #fff; height: 220px; display: flex;
+             align-items: center; justify-content: center; font-weight: 700; }
+  #content { background: #eef; padding: 24px; margin-top: 16px; }
+</style>
+<script>
+  window.__probeFixture = { allowed: false, blocked: false };
+  window.__probeFixtureSnapshot = function () {
+    var slot = document.getElementById("ad-slot");
+    var content = document.getElementById("content");
+    function visible(element) {
+      if (!element) { return false; }
+      if (!element.getClientRects().length) { return false; }
+      var style = getComputedStyle(element);
+      return style.display !== "none" && style.visibility !== "hidden";
+    }
+    return {
+      allowed: !!window.__probeFixture.allowed,
+      blocked: !!window.__probeFixture.blocked,
+      adSlotPresent: !!slot,
+      adSlotVisible: visible(slot),
+      contentPresent: !!content,
+      contentVisible: visible(content)
+    };
+  };
+</script>
+<script src="/blocked.js"></script>
+<script src="/allowed.js"></script>
+</head>
+<body>
+<div id="ad-slot">ad slot</div>
+<div id="content">page content</div>
+</body>
+</html>

@@ -29,6 +29,7 @@ import { readFile, readdir, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { pathToFileURL } from "node:url";
 
 import { HARD_CAP_RULES, MANIFEST_MAX_BYTES } from "../src/stages/pack.mjs";
 import {
@@ -181,6 +182,44 @@ const versions = await readJson(path.join(ROOT, "VERSIONS.json"));
 }
 
 // -------------------------------------------------------------------------
+// 3.1 XcodeGen (the M2c probe workflows)
+// -------------------------------------------------------------------------
+// XcodeGen EXECUTES on the runner, so it gets what every other dependency gets:
+// one exact release, one recorded sha256, and workflows that read both out of
+// this file instead of carrying their own copy of a URL that can drift.
+{
+  const pin = versions.toolchain?.xcodegen;
+  if (!pin) {
+    warn("toolchain.xcodegen", "no XcodeGen pin recorded; the probe workflows are unverified");
+  } else {
+    if (/^[0-9a-f]{64}$/.test(String(pin.sha256))) ok(`xcodegen sha256 ${String(pin.sha256).slice(0, 12)}`);
+    else bad("xcodegen.sha256", "must be 64 lowercase hex characters");
+
+    if (/^[0-9a-f]{40}$/.test(String(pin.revision ?? ""))) ok(`xcodegen revision ${String(pin.revision).slice(0, 12)}`);
+    else bad("xcodegen.revision", "must be the 40-hex commit the release tag points at");
+
+    const expected = `https://github.com/${pin.repo}/releases/download/${pin.version}/${pin.asset}`;
+    if (pin.url === expected) ok(`xcodegen url ${pin.version}/${pin.asset}`);
+    else bad("xcodegen.url", `expected ${expected}, found ${String(pin.url)}`);
+
+    for (const file of pin.usedBy ?? []) {
+      const full = path.join(ROOT, file);
+      if (!existsSync(full)) {
+        bad(`xcodegen in ${file}`, "usedBy names a workflow that does not exist");
+        continue;
+      }
+      const text = await readFile(full, "utf8");
+      const readsPin = text.includes("toolchain.xcodegen.url") && text.includes("toolchain.xcodegen.sha256");
+      const verifies = /shasum -a 256 -c/.test(text);
+      const hardcoded = /releases[/]download[/][0-9.]+[/]xcodegen/.test(text);
+      if (!readsPin) bad(`xcodegen in ${file}`, "must read the url and the sha256 out of VERSIONS.json");
+      else if (!verifies) bad(`xcodegen in ${file}`, "downloads the zip without checking it against the recorded sha256");
+      else if (hardcoded) bad(`xcodegen in ${file}`, "carries a hard-coded release URL; the pin belongs in VERSIONS.json");
+      else ok(`xcodegen in ${file}`);
+    }
+  }
+}
+// -------------------------------------------------------------------------
 // 4. Swift packages
 // -------------------------------------------------------------------------
 {
@@ -289,6 +328,57 @@ const versions = await readJson(path.join(ROOT, "VERSIONS.json"));
   for (const [name, pinned, inCode, where] of pairs) {
     if (pinned === inCode) ok(`budget ${name}=${inCode}`);
     else bad(`budget ${name}`, `VERSIONS.json says ${String(pinned)}, ${where} says ${inCode}`);
+  }
+
+  // The M2c probe budgets (docs/probehost/00-index.md section 4). The workflow
+  // ceiling, the suite's own wall clock and the retentions are numbers a reader
+  // of VERSIONS.json is entitled to trust without opening the workflows.
+  const probe = b.probe;
+  const workflowText = async (file) => {
+    const full = path.join(ROOT, ".github", "workflows", file);
+    return existsSync(full) ? await readFile(full, "utf8") : null;
+  };
+  const live = await workflowText("live.yml");
+  const spike = await workflowText("spike.yml");
+  const firstNumber = (text, re) => {
+    const m = re.exec(text ?? "");
+    return m ? Number(m[1]) : null;
+  };
+  const retentions = (text) => [...String(text ?? "").matchAll(/retention-days:\s*(\d+)/g)].map((m) => Number(m[1]));
+  if (!probe) {
+    warn("budgets.probe", "no probe budgets recorded");
+  } else if (!live || !spike) {
+    warn("budgets.probe", "live.yml or spike.yml is missing; the probe budgets are unverified");
+  } else {
+    const probePairs = [
+      ["probe jobTimeoutMin", probe.jobTimeoutMin, firstNumber(live, /^\s*timeout-minutes:\s*(\d+)/m), "live.yml timeout-minutes"],
+      ["probe spikeJobTimeoutMin", probe.spikeJobTimeoutMin, firstNumber(spike, /^\s*timeout-minutes:\s*(\d+)/m), "spike.yml timeout-minutes"],
+      ["probe suiteBudgetMin", probe.suiteBudgetMin, firstNumber(live, /--budget-min\s+(\d+)/), "live.yml --budget-min"],
+    ];
+    for (const [name, pinned, inFile, where] of probePairs) {
+      if (pinned === inFile) ok(`${name}=${String(pinned)}`);
+      else bad(name, `VERSIONS.json says ${String(pinned)}, ${where} says ${String(inFile)}`);
+    }
+    const liveWant = [probe.artifactRetentionDays, probe.trendRetentionDays];
+    const liveGot = retentions(live);
+    if (liveGot.length === liveWant.length && liveGot.every((v, i) => v === liveWant[i])) {
+      ok(`probe live retention ${liveGot.join("/")}`);
+    } else {
+      bad("probe live retention", `live.yml uploads with ${liveGot.join("/") || "none"}, VERSIONS.json records ${liveWant.join("/")}`);
+    }
+    const spikeGot = retentions(spike);
+    if (spikeGot.length === 1 && spikeGot[0] === probe.spikeRetentionDays) ok(`probe spike retention ${spikeGot[0]}`);
+    else bad("probe spike retention", `spike.yml uploads with ${spikeGot.join("/") || "none"}, VERSIONS.json records ${String(probe.spikeRetentionDays)}`);
+
+    // The summary writer's own cap, imported rather than grepped for.
+    const summaryModule = path.join(ROOT, "Tools", "ProbeRunner", "lib", "summary.mjs");
+    if (!existsSync(summaryModule)) {
+      warn("probe summaryMaxBytes", "Tools/ProbeRunner/lib/summary.mjs is missing");
+    } else {
+      const { SUMMARY_MAX_BYTES } = await import(pathToFileURL(summaryModule).href);
+      if (SUMMARY_MAX_BYTES === probe.summaryMaxBytes) ok(`probe summaryMaxBytes=${SUMMARY_MAX_BYTES}`);
+      else bad("probe summaryMaxBytes", `VERSIONS.json says ${String(probe.summaryMaxBytes)}, summary.mjs says ${String(SUMMARY_MAX_BYTES)}`);
+    }
   }
 }
 
@@ -407,6 +497,32 @@ if (process.argv.includes("--online")) {
       [`v${pin.version}`, pin.version],
       pin.revision,
     );
+  }
+
+  // The XcodeGen pin: the tag resolves to the recorded commit, and the asset the
+  // workflows download still has the recorded sha256. GitHub reports an asset's
+  // digest in the API, so a re-uploaded release is caught without downloading
+  // four megabytes on every check.
+  {
+    const pin = versions.toolchain?.xcodegen;
+    if (pin?.repo && pin?.version && pin?.revision) {
+      await checkTag(`online xcodegen@${pin.version}`, pin.repo, [pin.version, `v${pin.version}`], pin.revision);
+      const name = `online xcodegen ${pin.asset}`;
+      const release = await gh(`https://api.github.com/repos/${pin.repo}/releases/tags/${pin.version}`);
+      if (release.rateLimited) warn(name, release.rateLimited);
+      else if (release.notFound) bad(name, `no release ${pin.version} in ${pin.repo}`);
+      else if (release.error) bad(name, release.error);
+      else {
+        const asset = (release.body?.assets ?? []).find((a) => a.name === pin.asset);
+        if (!asset) bad(name, `the release has no asset named ${pin.asset}`);
+        else if (typeof asset.digest !== "string") warn(name, "the API reported no digest for this asset");
+        else if (asset.digest !== `sha256:${pin.sha256}`) {
+          bad(name, `asset digest ${asset.digest}, VERSIONS.json records sha256:${pin.sha256}`);
+        } else if (Number.isFinite(pin.sizeBytes) && asset.size !== pin.sizeBytes) {
+          bad(name, `asset size ${asset.size}, VERSIONS.json records ${pin.sizeBytes}`);
+        } else ok(name);
+      }
+    }
   }
 
   for (const [pkg, pin] of Object.entries(versions.npm ?? {})) {

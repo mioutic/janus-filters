@@ -1,0 +1,16 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: GPL-3.0-or-later
+  redirect-frame.html - the subframe half of the active-action-patterns probe. WebKit
+  checks the initiating frame's own DocumentLoader, so patterns set only on the main
+  frame would leave this frame without redirects; the probe reports both frames.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>redirect subframe</title>
+<script>window.__probeFixture = { redirected: false, original: false, frame: true };</script>
+<script src="/redirect-me.js"></script>
+</head>
+<body><p>subframe</p></body>
+</html>

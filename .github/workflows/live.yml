@@ -1,0 +1,324 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# The live blocking suite (docs/probehost/00-index.md section 4).
+#
+# Measured proof that the published bundle blocks: ProbeHost loads each scenario
+# twice on a real iOS simulator, once with the compiled rule lists attached and
+# once without, and the difference between the two runs is the measurement.
+#
+# Three properties this file must keep:
+#
+#   * No secrets. There is no `environment:` and `permissions: contents: read`.
+#     ProbeHost verifies the bundle with the PUBLIC key of docs/CONTRACT.md
+#     section 5, which is already published; nothing here signs anything.
+#   * Measurement never fails the job. A site that blocked nothing, a Reddit bot
+#     wall, a slow load and a red row are all data. The job fails only when the
+#     harness could not measure (runner exit 3) or the published bundle failed
+#     contract verification (exit 4).
+#   * The suite stops itself. `--budget-min` expires before `timeout-minutes`,
+#     because a workflow timeout uploads no artifacts and a run that measured
+#     eight scenarios and lost the evidence measured nothing.
+
+name: live
+
+on:
+  workflow_dispatch:
+    inputs:
+      runtime:
+        description: 'iOS runtime: newest, or an exact version such as 26.4'
+        type: string
+        default: newest
+      scenarios:
+        description: "Comma-separated scenario ids; empty runs every enabled scenario"
+        type: string
+        default: ""
+      repeats:
+        description: "Repeats per scenario per mode (the report takes the median)"
+        type: string
+        default: "1"
+      modes:
+        description: "Modes to run, in order"
+        type: choice
+        options:
+          - blocked,none
+          - blocked
+          - none
+        default: blocked,none
+      strict:
+        description: "Fail the job when a scenario marked stable misses its expectation"
+        type: boolean
+        default: false
+      record_egress:
+        description: "Resolve and record the runner's public IP (a datacentre address)"
+        type: boolean
+        default: false
+  schedule:
+    # Monday 05:23 UTC. Late enough that the daily `filters` publish has landed,
+    # and off the hour because every cron on GitHub fires on the hour.
+    - cron: "23 5 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  # One live suite at a time, and never cancel one: a cancelled run uploads no
+  # artifacts and burns the macOS minutes anyway.
+  group: probe-live
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "24"
+  XCODE_VERSION: "26.6"
+
+jobs:
+  live:
+    name: live blocking suite
+    runs-on: macos-26
+    # 60, not 45: `--budget-min 30` is only checked between work items and one item may
+    # run for budgetMs + 45 s of slack, so the suite can legitimately end near 35 min -
+    # and on a cold DerivedData cache the checkout, xcodegen and xcodebuild steps add
+    # another 6-10 min before it starts. The suite's own stop must always fire first,
+    # because a job timeout uploads no artifacts and a run that measured eight scenarios
+    # and lost the evidence measured nothing.
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Name this run
+        run: |
+          set -euo pipefail
+          run_id="$(date -u +%Y%m%d%H%M%S)-$(printf '%s' "${GITHUB_RUN_ID}" | tail -c 5)"
+          echo "PROBE_RUN_ID=${run_id}" >> "$GITHUB_ENV"
+          echo "PROBE_DIR=build/probe/${run_id}" >> "$GITHUB_ENV"
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Cache npm
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: npm-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Select and assert the toolchain
+        # The pinned Xcode is preferred; if the image has moved on, fall back to
+        # the newest installed 26.x rather than failing a weekly measurement over
+        # a point release. The major is asserted either way, because ProbeHost is
+        # built against the iOS 26 SDK and a 16.x fallback would silently change
+        # every WebKit behaviour the suite measures.
+        run: |
+          set -euo pipefail
+          selected="/Applications/Xcode_${XCODE_VERSION}.app"
+          if [ ! -d "${selected}" ]; then
+            echo "::notice::Xcode ${XCODE_VERSION} is not on this image; falling back to the newest installed 26.x"
+            selected="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)"
+          fi
+          if [ -z "${selected}" ] || [ ! -d "${selected}" ]; then
+            echo "::error::no Xcode 26.x on this runner image"
+            ls -d /Applications/Xcode*.app || true
+            exit 1
+          fi
+          sudo xcode-select -s "${selected}/Contents/Developer"
+          xcodebuild -version
+          version="$(xcodebuild -version | head -1 | awk '{print $2}')"
+          major="${version%%.*}"
+          if [ "${major}" != "26" ]; then
+            echo "::error::expected Xcode major 26, got ${version}"
+            exit 1
+          fi
+          echo "PROBE_XCODE=${version}" >> "$GITHUB_ENV"
+
+      - name: Install the pinned XcodeGen
+        # The pin lives in VERSIONS.json and is checked by scripts/pin-check.mjs.
+        # No brew install: a build tool that executes on the runner is a supply
+        # chain, so it is one exact zip verified against one exact sha256. The
+        # archive keeps its own layout (bin/xcodegen beside share/xcodegen), which
+        # is how the binary finds its SettingPresets.
+        run: |
+          set -euo pipefail
+          url="$(node -e "const v=JSON.parse(require('node:fs').readFileSync('VERSIONS.json','utf8'));process.stdout.write(v.toolchain.xcodegen.url)")"
+          want="$(node -e "const v=JSON.parse(require('node:fs').readFileSync('VERSIONS.json','utf8'));process.stdout.write(v.toolchain.xcodegen.sha256)")"
+          curl --fail --silent --show-error --location --retry 3 --retry-all-errors \
+            --output "${RUNNER_TEMP}/xcodegen.zip" "${url}"
+          printf '%s  %s\n' "${want}" "${RUNNER_TEMP}/xcodegen.zip" | shasum -a 256 -c -
+          unzip -q "${RUNNER_TEMP}/xcodegen.zip" -d "${RUNNER_TEMP}/xcodegen-dist"
+          echo "${RUNNER_TEMP}/xcodegen-dist/xcodegen/bin" >> "$GITHUB_PATH"
+
+      - name: Generate the ProbeHost project
+        run: |
+          set -euo pipefail
+          xcodegen version
+          xcodegen generate --spec Tools/ProbeHost/project.yml
+          test -d Tools/ProbeHost/ProbeHost.xcodeproj
+
+      - name: Cache DerivedData
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/DerivedData
+          key: probehost-dd-${{ env.PROBE_XCODE }}-${{ hashFiles('Tools/ProbeHost/project.yml', 'Tools/ProbeHost/Sources/**') }}
+          restore-keys: |
+            probehost-dd-${{ env.PROBE_XCODE }}-
+
+      - name: Build ProbeHost
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project Tools/ProbeHost/ProbeHost.xcodeproj \
+            -scheme ProbeHost \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ONLY_ACTIVE_ARCH=NO \
+            build
+          app="build/DerivedData/Build/Products/Release-iphonesimulator/ProbeHost.app"
+          test -d "${app}"
+          echo "PROBE_APP=${app}" >> "$GITHUB_ENV"
+
+      - name: Run the suite
+        id: suite
+        # Every dispatch input arrives through env, never through a `${{ }}` inside
+        # the script: an input is attacker-controlled text and a shell is not a
+        # safe place to interpolate it.
+        env:
+          PROBE_RUNTIME: ${{ inputs.runtime || 'newest' }}
+          PROBE_SCENARIOS: ${{ inputs.scenarios || '' }}
+          PROBE_REPEATS: ${{ inputs.repeats || '1' }}
+          PROBE_MODES: ${{ inputs.modes || 'blocked,none' }}
+          PROBE_STRICT: ${{ inputs.strict || 'false' }}
+          PROBE_EGRESS: ${{ inputs.record_egress || 'false' }}
+          # config/scenarios.json resolves `urlFrom` out of the environment
+          # (docs/probehost/02-runner.md section 3). A repo variable reaches a
+          # workflow only when it is mapped here; unset, gofile-file is skipped,
+          # never failed. Repo variables are public: a convenience, not a secret
+          # store, and the URL it carries is printed in the report like any other.
+          PROBE_GOFILE_URL: ${{ vars.PROBE_GOFILE_URL }}
+        run: |
+          set -uo pipefail
+          args=(
+            --app "${PROBE_APP}"
+            --out "${PROBE_DIR}"
+            --run-id "${PROBE_RUN_ID}"
+            --runtime "${PROBE_RUNTIME}"
+            --repeats "${PROBE_REPEATS}"
+            --modes "${PROBE_MODES}"
+            --budget-min 30
+          )
+          if [ -n "${PROBE_SCENARIOS}" ]; then args+=(--only "${PROBE_SCENARIOS}"); fi
+          if [ "${PROBE_STRICT}" = "true" ]; then args+=(--strict); fi
+          if [ "${PROBE_EGRESS}" = "true" ]; then args+=(--record-egress); fi
+          node Tools/ProbeRunner/run.mjs "${args[@]}"
+          code=$?
+          echo "exit-code=${code}" >> "$GITHUB_OUTPUT"
+          echo "runner exit ${code}"
+          exit 0
+
+      - name: Job summary and trend
+        if: always()
+        # Rendering the summary must never decide the job: this file's rule is that only
+        # a harness failure (runner exit 3) or a failed contract verification (exit 4)
+        # turns a measured suite red, and report.mjs exits 2 for any report it cannot
+        # render. The Outcome step below is the only step that sets the result.
+        continue-on-error: true
+        # report.mjs reads report.json and nothing else, so the summary and the
+        # trend cannot disagree with the artifact. When the runner never got as
+        # far as writing one, say that in the summary rather than leaving a green
+        # job with no explanation.
+        env:
+          SUITE_CODE: ${{ steps.suite.outputs.exit-code }}
+        run: |
+          set -euo pipefail
+          if [ -f "${PROBE_DIR:-}/report.json" ]; then
+            node Tools/ProbeRunner/report.mjs \
+              --dir "${PROBE_DIR}" \
+              --summary "$GITHUB_STEP_SUMMARY" \
+              --artifact "probe-live-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          else
+            {
+              echo "## Live blocking suite"
+              echo
+              echo "**No report was produced.** The runner exited with code ${SUITE_CODE:-unknown},"
+              echo "and nothing was measured. The runner log, if there is one, is in the artifact."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload the run tree
+        # PROBE_DIR is set by "Name this run"; if a step before that failed, `path` would
+        # be empty and upload-artifact errors out on an empty input (if-no-files-found
+        # covers a missing file, not a missing path).
+        if: always() && env.PROBE_DIR != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: probe-live-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.PROBE_DIR }}
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload the trend record
+        if: always() && env.PROBE_DIR != ''
+        # Its own artifact with its own retention: the tree is for debugging this
+        # run, the trend record is for comparing runs months apart. No store is
+        # wired (docs/probehost/03-report.md section 4.3) — harvesting these with
+        # `gh run download` is the documented route and needs no new permission.
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          # run_attempt too: upload-artifact v4+ rejects a duplicate artifact name inside
+          # one run, so re-running the job - the normal response to a flaky live suite -
+          # would fail here and lose the 90-day trend record for the re-run.
+          name: probe-trend-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.PROBE_DIR }}/trend.json
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Outcome
+        if: always()
+        env:
+          CODE: ${{ steps.suite.outputs.exit-code }}
+          PROBE_STRICT: ${{ inputs.strict || 'false' }}
+        run: |
+          set -euo pipefail
+          case "${CODE}" in
+            "")
+              # A step before the suite failed; that failure is the job's outcome.
+              echo "::notice::the suite did not run"
+              ;;
+            0)
+              echo "the suite ran; every number is in the summary and the artifact"
+              ;;
+            1)
+              # Exit 1 happens only under --strict, which is opt-in precisely so
+              # that an expectation can fail a job when someone asked for it.
+              if [ "${PROBE_STRICT}" = "true" ]; then
+                echo "::error::a stable scenario missed its expectation under --strict"
+                exit 1
+              fi
+              echo "::warning::runner exit 1 without --strict; treating it as a measurement"
+              ;;
+            2)
+              echo "::error::the runner refused its arguments or config/scenarios.json is invalid; nothing was measured"
+              exit 1
+              ;;
+            3)
+              echo "::error::harness failure: the suite could not measure. See run.log in the artifact."
+              exit 1
+              ;;
+            4)
+              echo "::error::the published bundle failed contract verification (docs/CONTRACT.md section 6)"
+              exit 1
+              ;;
+            *)
+              echo "::error::unexpected runner exit ${CODE}"
+              exit 1
+              ;;
+          esac

@@ -1,0 +1,235 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# The M0 capability spike (docs/probehost/04-spike.md).
+#
+# Six questions about WebKit on iOS that cannot be answered by reading the SDK
+# headers: does the content-rule-list action callback fire, do active action
+# patterns behave as the contract assumes, does a media preference apply on the
+# next navigation, is MediaSource or ManagedMediaSource there, does the page-load
+# timing SPI exist, and which runtimes are installed at all.
+#
+# Two things this workflow is not:
+#
+#   * It is not a test. A grid full of `fail` is a successful spike that delivered
+#     bad news; the job fails only when the harness could not produce a verdict.
+#     `unknown` is a first-class answer and is never dressed up as pass or fail.
+#   * It is not scheduled. These answers change when an iOS major ships, not
+#     weekly, so it runs on demand and spends no minutes otherwise.
+#
+# Offline by construction: every probe runs against ProbeHost's own fixture server
+# on 127.0.0.1 or about:blank, so the result is a fact about WebKit rather than
+# about the internet's mood on a Tuesday.
+
+name: spike
+
+on:
+  workflow_dispatch:
+    inputs:
+      runtime:
+        description: 'iOS runtimes: all, newest, or an exact version such as 26.4'
+        type: string
+        default: all
+      # There is deliberately no `probes` input: Tools/ProbeRunner/run.mjs section 8
+      # defines no flag for selecting probes, and a workflow input that quietly did
+      # nothing would be worse than its absence. The whole set runs, every time.
+
+permissions:
+  contents: read
+
+concurrency:
+  group: probe-spike
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "24"
+  XCODE_VERSION: "26.6"
+
+jobs:
+  spike:
+    name: M0 capability spike
+    runs-on: macos-26
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Name this run
+        run: |
+          set -euo pipefail
+          run_id="spike-$(date -u +%Y%m%d%H%M%S)-$(printf '%s' "${GITHUB_RUN_ID}" | tail -c 5)"
+          echo "PROBE_RUN_ID=${run_id}" >> "$GITHUB_ENV"
+          echo "PROBE_DIR=build/probe/${run_id}" >> "$GITHUB_ENV"
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Cache npm
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: npm-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Select and assert the toolchain
+        # Identical to live.yml: the pinned Xcode when it is there, the newest
+        # installed 26.x otherwise, and the major asserted either way.
+        run: |
+          set -euo pipefail
+          selected="/Applications/Xcode_${XCODE_VERSION}.app"
+          if [ ! -d "${selected}" ]; then
+            echo "::notice::Xcode ${XCODE_VERSION} is not on this image; falling back to the newest installed 26.x"
+            selected="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)"
+          fi
+          if [ -z "${selected}" ] || [ ! -d "${selected}" ]; then
+            echo "::error::no Xcode 26.x on this runner image"
+            ls -d /Applications/Xcode*.app || true
+            exit 1
+          fi
+          sudo xcode-select -s "${selected}/Contents/Developer"
+          xcodebuild -version
+          version="$(xcodebuild -version | head -1 | awk '{print $2}')"
+          major="${version%%.*}"
+          if [ "${major}" != "26" ]; then
+            echo "::error::expected Xcode major 26, got ${version}"
+            exit 1
+          fi
+          echo "PROBE_XCODE=${version}" >> "$GITHUB_ENV"
+
+      - name: Install the pinned XcodeGen
+        run: |
+          set -euo pipefail
+          url="$(node -e "const v=JSON.parse(require('node:fs').readFileSync('VERSIONS.json','utf8'));process.stdout.write(v.toolchain.xcodegen.url)")"
+          want="$(node -e "const v=JSON.parse(require('node:fs').readFileSync('VERSIONS.json','utf8'));process.stdout.write(v.toolchain.xcodegen.sha256)")"
+          curl --fail --silent --show-error --location --retry 3 --retry-all-errors \
+            --output "${RUNNER_TEMP}/xcodegen.zip" "${url}"
+          printf '%s  %s\n' "${want}" "${RUNNER_TEMP}/xcodegen.zip" | shasum -a 256 -c -
+          unzip -q "${RUNNER_TEMP}/xcodegen.zip" -d "${RUNNER_TEMP}/xcodegen-dist"
+          echo "${RUNNER_TEMP}/xcodegen-dist/xcodegen/bin" >> "$GITHUB_PATH"
+
+      - name: Generate the ProbeHost project
+        run: |
+          set -euo pipefail
+          xcodegen version
+          xcodegen generate --spec Tools/ProbeHost/project.yml
+          test -d Tools/ProbeHost/ProbeHost.xcodeproj
+
+      - name: Cache DerivedData
+        # The same cache key as live.yml, so a spike run after a live run builds
+        # in seconds instead of minutes.
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/DerivedData
+          key: probehost-dd-${{ env.PROBE_XCODE }}-${{ hashFiles('Tools/ProbeHost/project.yml', 'Tools/ProbeHost/Sources/**') }}
+          restore-keys: |
+            probehost-dd-${{ env.PROBE_XCODE }}-
+
+      - name: Build ProbeHost
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project Tools/ProbeHost/ProbeHost.xcodeproj \
+            -scheme ProbeHost \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ONLY_ACTIVE_ARCH=NO \
+            build
+          app="build/DerivedData/Build/Products/Release-iphonesimulator/ProbeHost.app"
+          test -d "${app}"
+          echo "PROBE_APP=${app}" >> "$GITHUB_ENV"
+
+      - name: Run the probes
+        id: suite
+        env:
+          PROBE_RUNTIME: ${{ inputs.runtime || 'all' }}
+        run: |
+          set -uo pipefail
+          node Tools/ProbeRunner/run.mjs \
+            --app "${PROBE_APP}" \
+            --suite spike \
+            --out "${PROBE_DIR}" \
+            --run-id "${PROBE_RUN_ID}" \
+            --runtime "${PROBE_RUNTIME}"
+          code=$?
+          echo "exit-code=${code}" >> "$GITHUB_OUTPUT"
+          echo "runner exit ${code}"
+          exit 0
+
+      - name: Job summary
+        if: always()
+        # Rendering the summary must never decide the job; report.mjs exits 2 for a
+        # report it cannot render, and only the Outcome step sets the result.
+        continue-on-error: true
+        env:
+          SUITE_CODE: ${{ steps.suite.outputs.exit-code }}
+        run: |
+          set -euo pipefail
+          # A harness failure leaves report.json (carrying suite: spike) rather than
+          # spike-report.json; both are summarised, neither is invented.
+          if [ -f "${PROBE_DIR:-}/spike-report.json" ] || [ -f "${PROBE_DIR:-}/report.json" ]; then
+            node Tools/ProbeRunner/report.mjs \
+              --dir "${PROBE_DIR}" \
+              --summary "$GITHUB_STEP_SUMMARY" \
+              --artifact "probe-spike-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          else
+            {
+              echo "## M0 capability spike"
+              echo
+              echo "**No spike report was produced.** The runner exited with code ${SUITE_CODE:-unknown},"
+              echo "so no probe reached a verdict. The runner log, if there is one, is in the artifact."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload the spike tree
+        # PROBE_DIR is set by "Name this run"; an empty `path` is an upload-artifact
+        # error, which if-no-files-found does not cover.
+        if: always() && env.PROBE_DIR != ''
+        # 90 days, unlike the live suite's 14: a capability answer is quoted back
+        # months later when a feature is designed on top of it, and re-running the
+        # spike to recover it costs macOS minutes.
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          # run_attempt too: upload-artifact v4+ rejects a duplicate artifact name inside
+          # one run, so a second attempt would fail here and lose every probe verdict -
+          # the artifact this workflow exists to produce.
+          name: probe-spike-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.PROBE_DIR }}
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Outcome
+        if: always()
+        env:
+          CODE: ${{ steps.suite.outputs.exit-code }}
+        run: |
+          set -euo pipefail
+          case "${CODE}" in
+            "")
+              echo "::notice::the spike did not run"
+              ;;
+            0)
+              echo "every probe produced a verdict; read the matrix in the summary"
+              ;;
+            2)
+              echo "::error::the runner refused its arguments; no probe ran"
+              exit 1
+              ;;
+            3)
+              echo "::error::harness failure: no runtime booted, the app would not install, or a spike.json was missing"
+              exit 1
+              ;;
+            *)
+              echo "::error::unexpected runner exit ${CODE}"
+              exit 1
+              ;;
+          esac

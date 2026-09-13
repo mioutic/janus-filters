@@ -1,0 +1,104 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# ProbeHost - XcodeGen spec (docs/probehost/01-probehost.md section 1).
+#
+# One application target, no packages, no test targets: ProbeHost is driven by
+# `xcrun simctl launch` with `-Probe*` arguments and writes its results into its own
+# data container (docs/probehost/00-index.md section 1), so there is nothing here for
+# a test runner to host.
+#
+# The generated ProbeHost.xcodeproj is NOT committed. CI regenerates it with
+#     xcodegen generate --spec Tools/ProbeHost/project.yml
+# and builds with
+#     xcodebuild -project Tools/ProbeHost/ProbeHost.xcodeproj -scheme ProbeHost \
+#                -configuration Release -sdk iphonesimulator \
+#                -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build
+
+name: ProbeHost
+
+options:
+  bundleIdPrefix: io.github.mioutic
+  createIntermediateGroups: true
+  generateEmptyDirectories: false
+  deploymentTarget:
+    iOS: "17.0"
+
+configs:
+  Debug: debug
+  Release: release
+
+# Settings shared by every configuration. Language mode 5 matches the repo's other
+# Swift tools (VERSIONS.json toolchain.swiftLanguageMode), and strict concurrency is
+# pinned to `minimal` on purpose: this target has no concurrency model to check, it is
+# a straight-line callback machine, and a compiler default that changes between Xcode
+# releases must not be able to break a build that has to work on its first run.
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    SWIFT_EMIT_LOC_STRINGS: NO
+    CLANG_ENABLE_MODULES: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    CODE_SIGNING_ALLOWED: NO
+    CODE_SIGNING_REQUIRED: NO
+    CODE_SIGN_IDENTITY: ""
+    CODE_SIGNING_STYLE: Manual
+    DEVELOPMENT_TEAM: ""
+    ALWAYS_SEARCH_USER_PATHS: NO
+    TARGETED_DEVICE_FAMILY: "1"
+    SUPPORTS_MACCATALYST: NO
+    SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+    ENABLE_TESTING_SEARCH_PATHS: NO
+  configs:
+    Debug:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+      ONLY_ACTIVE_ARCH: YES
+    Release:
+      SWIFT_COMPILATION_MODE: wholemodule
+      ONLY_ACTIVE_ARCH: NO
+
+targets:
+  ProbeHost:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+
+    sources:
+      # Swift sources plus probe.js, which lands flat in the bundle root.
+      - path: Sources/ProbeHost
+        excludes:
+          - "Resources/fixtures"
+          - "Resources/fixtures/**"
+      # A folder reference, so the fixture set keeps its directory shape inside the
+      # .app and FixtureServer can serve `fixtures/<name>` without a lookup table.
+      # (An asset-catalog-style `resources:` key is deliberately not used: XcodeGen
+      # only ships what `sources` names.)
+      - path: Sources/ProbeHost/Resources/fixtures
+        type: folder
+        buildPhase: resources
+
+    settings:
+      base:
+        PRODUCT_NAME: ProbeHost
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.mioutic.probehost
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Sources/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        ENABLE_PREVIEWS: NO
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
+
+schemes:
+  ProbeHost:
+    build:
+      targets:
+        ProbeHost: all
+    run:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

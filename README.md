@@ -16,6 +16,9 @@ job — never written to a file, never logged, never uploaded in an artifact.
 - **What the app is allowed to assume:** [`docs/CONTRACT.md`](docs/CONTRACT.md) —
   URLs, manifest schema, signature, verification order, failure behaviour. That
   document is normative for the app; this README is an overview.
+- **Proof that the bundle blocks:** [`docs/PROBEHOST.md`](docs/PROBEHOST.md) —
+  what each measured number means, which are trustworthy and which are only
+  indicative, and what the runner's datacentre IP changes about a page.
 
 ## What the app downloads
 
@@ -78,6 +81,10 @@ src/stages/         fetch, preprocess, trustgate, translate, bucket, active,
                     report, pack, sign, verify
 Tools/JanusConvert  SwiftPM CLI over SafariConverterLib 4.3.0 (macOS CI only)
 Tools/RuleListValidate  compiles every bucket with WKContentRuleListStore (macOS CI only)
+Tools/ProbeHost     a minimal iOS app that consumes a published bundle and measures
+                    what it blocks (simulator only, built in CI)
+Tools/ProbeRunner   boots a simulator, runs every scenario in both modes, writes
+                    the report, the job summary and the trend record
 scripts/            pin-check, advanced-rules targets, NOTICE and alias generators
 test/               node:test suites and tiny hand-written fixtures
 VERSIONS.json       every pin: npm, SwiftPM, runners, Xcode, actions, budgets
@@ -120,6 +127,8 @@ node src/cli.mjs verify --manifest manifest.json --sig manifest.json.sig
 |---|---|---|
 | `.github/workflows/test.yml` | push to `main`, pull request | Node tests, pins (online), generated files, fixture dry run; on a same-repository pull request that touches `Tools/`, a macOS Swift build |
 | `.github/workflows/filters.yml` | daily at 04:17 UTC, manual | `prepare` (ubuntu) → `convert` (macOS) → `publish` (ubuntu, environment `filters-release`, `main` only) → `pages` |
+| `.github/workflows/live.yml` | Mondays at 05:23 UTC, manual | Builds ProbeHost, loads every scenario on an iOS simulator with the published rules attached and again without them, and uploads the measurements |
+| `.github/workflows/spike.yml` | manual | The M0 capability probes that need a real simulator, once per installed iOS runtime, offline against the app's own fixtures |
 
 `prepare` and `convert` hold no secrets, which matters because they are the jobs
 that execute third-party filter content. The signing key is attached to `publish`
@@ -129,6 +138,34 @@ SHA recorded in `VERSIONS.json`, and `pin-check` fails the build if a pin drifts
 A failed run publishes nothing. The app then simply keeps using what it has; at 14
 days it says so in its own UI. That is a designed, observable degradation rather
 than an outage, and it is why nothing here retries a publish automatically.
+
+## Does it actually block?
+
+Claiming that a bundle blocks is easy; measuring it is the point of the `live`
+workflow. It builds a small instrument app, `Tools/ProbeHost`, which downloads the
+published manifest, verifies its signature and hashes exactly as
+[`docs/CONTRACT.md`](docs/CONTRACT.md) describes, compiles the buckets with
+`WKContentRuleListStore`, and then loads each site twice on an iOS simulator: once
+with the rule lists attached and once without. The difference between the two runs
+is the measurement — requests blocked, ad elements still visible, popups attempted,
+overlays, load time.
+
+Every run uploads its JSON, its screenshots and a small trend record as artifacts,
+and writes the per-scenario table into the run's job summary. Neither workflow uses
+a secret or an environment: ProbeHost verifies with the public key above, which is
+the only key a client ever needs.
+
+The numbers are not all equal in weight, and
+[`docs/PROBEHOST.md`](docs/PROBEHOST.md) says which is which: blocked-request
+counts and DOM counts are trustworthy, timings inside a virtualised simulator are
+indicative at best, and a hosted runner reaches some sites from a datacentre
+address that answers with a bot wall rather than a page. When that happens the run
+records it and says so instead of pretending it measured blocking.
+
+```sh
+npm run probe -- --app <path to ProbeHost.app>   # macOS with Xcode, one simulator
+npm run probe:report -- --dir build/probe/<runId>
+```
 
 ## Licences and attribution
 

@@ -1,0 +1,20 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: GPL-3.0-or-later
+  redirect.html - the active-action-patterns fixture (04-spike.md section 3.3). The same
+  request is made by the main frame and by a same-document iframe, so the probe can tell
+  a main-frame-only grant from a real one.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>redirect probe</title>
+<script>window.__probeFixture = { redirected: false, original: false, frame: false };</script>
+<script src="/redirect-me.js"></script>
+</head>
+<body>
+<p>main frame</p>
+<iframe src="/redirect-frame.html" width="200" height="120" title="subframe"></iframe>
+</body>
+</html>

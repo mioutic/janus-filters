@@ -1,7 +1,7 @@
 # janus-filters build pipeline
 
 Status: normative for milestone M2a. Version 1 of the pipeline contract.
-Governing spec: `Janus/docs/DESIGN.md` sections 1, 3, 9, 10 (private repo). Where this
+Governing spec: the app repo's design document (private), sections 1, 3, 9, 10. Where this
 document and DESIGN disagree, DESIGN wins and this document is wrong and must be fixed.
 
 This document defines, for every stage: its inputs, its outputs, its algorithm, its exit

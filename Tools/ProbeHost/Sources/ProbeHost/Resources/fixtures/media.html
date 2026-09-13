@@ -1,0 +1,42 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: GPL-3.0-or-later
+  media.html - the media capability fixture (04-spike.md sections 3.4 and 3.5).
+
+  It reports what this WebKit exposes, in this state, at load time: the two typeof
+  readouts the preference probe compares across navigations, plus the codec answers that
+  make the simulator's difference from a device visible. Everything here is public API.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>media capability</title>
+<script>
+  (function () {
+    var video = document.createElement("video");
+    function supported(constructorName, type) {
+      try {
+        var target = window[constructorName];
+        if (!target || typeof target.isTypeSupported !== "function") { return null; }
+        return !!target.isTypeSupported(type);
+      } catch (error) { return null; }
+    }
+    var report = {
+      mediaSource: typeof MediaSource,
+      managedMediaSource: typeof ManagedMediaSource,
+      mediaSourceIn: "MediaSource" in window,
+      managedMediaSourceIn: "ManagedMediaSource" in window,
+      hlsNative: video.canPlayType("application/vnd.apple.mpegurl"),
+      mp4: video.canPlayType("video/mp4"),
+      avc: supported("MediaSource", 'video/mp4; codecs="avc1.42E01E,mp4a.40.2"'),
+      hvc: supported("MediaSource", 'video/mp4; codecs="hvc1.1.6.L93.B0"'),
+      av01: supported("MediaSource", 'video/mp4; codecs="av01.0.05M.08"'),
+      mmsAvc: supported("ManagedMediaSource", 'video/mp4; codecs="avc1.42E01E,mp4a.40.2"')
+    };
+    window.__probeFixture = { media: report };
+  })();
+</script>
+</head>
+<body><p id="content">media capability fixture</p></body>
+</html>

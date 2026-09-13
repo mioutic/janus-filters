@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+
+  "note": "The sites the live blocking suite measures (docs/probehost/02-runner.md section 3). Data only: no code reads a URL from anywhere else, and ProbeHost never reads this file - the runner copies the one scenario it is about to run into the app container. Every entry must be legal, mainstream and safe: no piracy, adult or malware hosts. Adding a site is a review item, which is why the list lives in one data file.",
+
+  "defaults": {
+    "waitIdleMs": 2500,
+    "timeoutMs": 45000,
+    "budgetMs": 240000,
+    "tapCentre": false,
+    "screenshots": true,
+    "scroll": { "times": 0, "dy": 800, "pauseMs": 700 }
+  },
+
+  "commonSelectors": [
+    "ins.adsbygoogle",
+    "iframe[id^='google_ads_iframe']",
+    "iframe[src*='doubleclick']",
+    "iframe[src*='safeframe']",
+    "[id^='div-gpt-ad']",
+    "[class*='ad-slot']",
+    "[data-ad-client]",
+    "[aria-label='Advertisement']",
+    ".taboola",
+    "[id^='taboola']",
+    "[id^='outbrain']",
+    "iframe[src*='amazon-adsystem']"
+  ],
+
+  "pageState": {
+    "challenged": {
+      "text": [
+        "verify you are human",
+        "unusual traffic",
+        "are you a robot",
+        "access denied",
+        "request blocked",
+        "rate limited"
+      ],
+      "selectors": ["#challenge-form", "[data-testid='bot-check']"]
+    },
+    "login-wall": {
+      "text": ["log in to continue", "sign in to view"],
+      "selectors": ["[data-testid='login-wall']"]
+    },
+    "consent-wall": {
+      "text": ["we value your privacy", "manage your choices", "accept all cookies"],
+      "selectors": [
+        "#onetrust-banner-sdk",
+        "#didomi-popup",
+        ".qc-cmp2-container",
+        "[id^='sp_message_container']"
+      ]
+    }
+  },
+
+  "scenarios": [
+    {
+      "id": "selftest-local",
+      "title": "Harness self-check (offline fixture)",
+      "url": "fixture:/selftest.html",
+      "gate": true,
+      "stable": true,
+      "tapCentre": false,
+      "waitIdleMs": 800,
+      "timeoutMs": 15000,
+      "selectors": ["#ad-slot"],
+      "expect": { "blockedMin": 1, "domVisibleMax": 0, "allowedMustLoad": true },
+      "notes": "Served by the app's own listener on 127.0.0.1. No network. Its failure aborts the suite. Only #ad-slot is a DOM selector: the fixture keeps #content visible on purpose as proof the page rendered, and domVisibleMax counts every selector in this list, so listing #content here would fail the gate by design. The allowed side is proved by expect.allowedMustLoad plus the run.json fixture block."
+    },
+    {
+      "id": "canyoublockit-extreme",
+      "title": "CanYouBlockIt extreme test",
+      "url": "https://canyoublockit.com/extreme-test/",
+      "stable": true,
+      "tapCentre": false,
+      "scroll": { "times": 3, "dy": 900, "pauseMs": 600 },
+      "selectors": ["@common", ".ad-container", "#ad_position_box"],
+      "expect": { "blockedMin": 20, "domVisibleMax": 0 },
+      "notes": "DESIGN 9.3's adblock pass criterion. Stable benchmark: gateable under --strict."
+    },
+    {
+      "id": "reddit-popular",
+      "title": "Reddit r/popular (new UI)",
+      "url": "https://www.reddit.com/r/popular/",
+      "tapCentre": false,
+      "scroll": { "times": 6, "dy": 800, "pauseMs": 700 },
+      "selectors": [
+        "@common",
+        "shreddit-ad-post",
+        "shreddit-comments-page-ad",
+        "shreddit-comment-tree-ad",
+        "[data-testid='promoted-post']"
+      ],
+      "notes": "Datacentre egress is frequently challenged. pageState carries the truth."
+    },
+    {
+      "id": "reddit-r-news",
+      "title": "Reddit r/news (busy subreddit)",
+      "url": "https://www.reddit.com/r/news/",
+      "tapCentre": false,
+      "scroll": { "times": 6, "dy": 800, "pauseMs": 700 },
+      "selectors": ["@common", "shreddit-ad-post", "shreddit-comment-tree-ad"]
+    },
+    {
+      "id": "old-reddit-videos",
+      "title": "old.reddit.com r/videos",
+      "url": "https://old.reddit.com/r/videos/",
+      "tapCentre": false,
+      "scroll": { "times": 4, "dy": 900, "pauseMs": 600 },
+      "selectors": ["@common", ".promotedlink", "#ad_main", ".promoted"]
+    },
+    {
+      "id": "gofile-home",
+      "title": "gofile.io home",
+      "url": "https://gofile.io/",
+      "tapCentre": true,
+      "selectors": ["@common", "[id^='aswift']", "iframe[src*='ads']"],
+      "notes": "Popup-monetised. The tap is synthetic, so popup counts are indicative: docs/PROBEHOST.md section 4."
+    },
+    {
+      "id": "gofile-file",
+      "title": "gofile.io file page",
+      "urlFrom": "PROBE_GOFILE_URL",
+      "optional": true,
+      "tapCentre": true,
+      "selectors": ["@common", "[id^='aswift']"],
+      "notes": "Set the repo variable PROBE_GOFILE_URL to a gofile /d/ link the owner uploaded. Absent: skipped, not failed. Repo variables are public, so this is a convenience and not a secret store."
+    },
+    {
+      "id": "dailymail-ushome",
+      "title": "Daily Mail US home (ad-heavy)",
+      "url": "https://www.dailymail.co.uk/ushome/index.html",
+      "tapCentre": false,
+      "scroll": { "times": 5, "dy": 900, "pauseMs": 600 },
+      "selectors": ["@common", ".mol-ads-cif"]
+    },
+    {
+      "id": "accuweather-home",
+      "title": "AccuWeather home (ad-heavy)",
+      "url": "https://www.accuweather.com/",
+      "tapCentre": true,
+      "scroll": { "times": 3, "dy": 800, "pauseMs": 600 },
+      "selectors": ["@common"]
+    },
+    {
+      "id": "merriam-webster",
+      "title": "Merriam-Webster home (ad-heavy)",
+      "url": "https://www.merriam-webster.com/",
+      "tapCentre": false,
+      "scroll": { "times": 4, "dy": 800, "pauseMs": 600 },
+      "selectors": ["@common"]
+    }
+  ]
+}

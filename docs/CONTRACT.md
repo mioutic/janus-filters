@@ -11,7 +11,8 @@ The app is the only consumer, but the bundle is public and unauthenticated: ther
 credentials, no user identifiers, no telemetry, and no request that distinguishes one installation
 from another. Integrity comes entirely from the Ed25519 signature described in section 5.
 
-Where this document and `Janus/docs/DESIGN.md` disagree, DESIGN wins.
+Where this document and the app repo's design document (private) disagree, the design
+document wins.
 
 ---
 
