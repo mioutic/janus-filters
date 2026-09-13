@@ -74,13 +74,15 @@ jobs:
   live:
     name: live blocking suite
     runs-on: macos-26
-    # 60, not 45: `--budget-min 45` is only checked between work items and one item may
-    # run for budgetMs + 45 s of slack, so the suite can legitimately end near 35 min -
+    # 70, not 50: `--budget-min 40` is only checked between work items and one item may
+    # run for budgetMs + 45 s of slack, so the suite can legitimately end near 45 min -
     # and on a cold DerivedData cache the checkout, xcodegen and xcodebuild steps add
     # another 6-10 min before it starts. The suite's own stop must always fire first,
     # because a job timeout uploads no artifacts and a run that measured eight scenarios
-    # and lost the evidence measured nothing.
-    timeout-minutes: 60
+    # and lost the evidence measured nothing. The budget went from 30 to 40 because
+    # every item relaunches the app and pays a cold rule-list compile, measured at
+    # roughly 50 s per item on the runner: 20 items no longer fit in 30 minutes.
+    timeout-minutes: 70
     permissions:
       contents: read
     steps:
@@ -217,7 +219,7 @@ jobs:
             --runtime "${PROBE_RUNTIME}"
             --repeats "${PROBE_REPEATS}"
             --modes "${PROBE_MODES}"
-            --budget-min 45
+            --budget-min 40
           )
           if [ -n "${PROBE_SCENARIOS}" ]; then args+=(--only "${PROBE_SCENARIOS}"); fi
           if [ "${PROBE_STRICT}" = "true" ]; then args+=(--strict); fi
