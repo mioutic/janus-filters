@@ -131,7 +131,11 @@ jobs:
           fi
           sudo xcode-select -s "${selected}/Contents/Developer"
           xcodebuild -version
-          version="$(xcodebuild -version | head -1 | awk '{print $2}')"
+          # `| head -1` closes the pipe while xcodebuild is still writing, and
+          # xcodebuild turns the SIGPIPE into an uncaught NSFileHandleOperationException
+          # and aborts (exit 134). It is a race, so it passes most runs and fails some.
+          # awk reads to EOF, so nothing ever closes the pipe early.
+          version="$(xcodebuild -version | awk 'NR == 1 { print $2 }')"
           major="${version%%.*}"
           if [ "${major}" != "26" ]; then
             echo "::error::expected Xcode major 26, got ${version}"
