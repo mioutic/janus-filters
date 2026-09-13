@@ -475,10 +475,24 @@ export function renderSpikeSummary(report, options = {}) {
     const probe = (runtime.probes ?? []).find((p) => p.id === "media-source-availability");
     const evidence = probe?.evidence;
     if (!evidence || typeof evidence !== "object") continue;
-    const pairs = Object.entries(evidence).map(([k, v]) => {
-      const value = typeof v === "boolean" ? (v ? "present" : "absent") : v === null ? "unknown" : String(v);
-      return `${safe(k)} **${safe(value)}**`;
-    });
+    const render = (value) =>
+      typeof value === "boolean" ? (value ? "present" : "absent") : value === null ? "unknown" : String(value);
+    // ProbeHost nests every codec and media API answer inside `report`, so the
+    // flat map this used to be rendered the one field worth reading as
+    // "[object Object]": a summary that is green and says nothing. Arrays stay
+    // stringified rather than expanded - no evidence field is an array today,
+    // and inventing a shape for one here is how a spike starts reporting
+    // something it did not measure.
+    const pairs = [];
+    for (const [key, value] of Object.entries(evidence)) {
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        for (const [inner, innerValue] of Object.entries(value)) {
+          pairs.push(`${safe(inner)} **${safe(render(innerValue))}**`);
+        }
+        continue;
+      }
+      pairs.push(`${safe(key)} **${safe(render(value))}**`);
+    }
     if (pairs.length > 0) out.push(`Capability report on ${safe(runtime.runtime ?? "?")}: ${pairs.join(", ")}.`);
   }
   if (out[out.length - 1] !== "") out.push("");

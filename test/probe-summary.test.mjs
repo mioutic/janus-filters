@@ -390,6 +390,26 @@ test("every unknown and every fail carries its reason", () => {
   );
 });
 
+test("the capability report is expanded, not stringified", () => {
+  // ProbeHost nests the codec and media API answers one level down, inside
+  // `report`. A flat String() over the evidence renders that whole object as
+  // "[object Object]", which is exactly the field this probe exists to produce.
+  const report = spikeReport();
+  const runtime = report.runtimes[0];
+  const probe = runtime.probes.find((p) => p.id === "media-source-availability");
+  probe.evidence = {
+    pageLoaded: true,
+    report: { mediaSource: "undefined", managedMediaSource: "function", mmsAvc: true, avc: null },
+    appliesTo: "simulator; not a statement about a device",
+  };
+  const markdown = renderSummary(report);
+  assert.ok(!markdown.includes("[object Object]"), "the capability report must not be stringified as an object");
+  assert.match(markdown, /managedMediaSource \*\*function\*\*/);
+  assert.match(markdown, /mediaSource \*\*undefined\*\*/);
+  assert.match(markdown, /mmsAvc \*\*present\*\*/);
+  assert.match(markdown, /avc \*\*unknown\*\*/);
+});
+
 test("a spike that produced no verdict says so instead of printing an empty grid", () => {
   const report = spikeReport();
   report.runtimes = [];
