@@ -180,6 +180,10 @@ final class ScenarioRunner {
             if scenario.url.hasPrefix("fixture:") {
                 let port = try fixtures.start(requestedPort: arguments.fixturePort)
                 record.fixturePort = Int(port)
+                // Logged rather than awaited. If the listener turns out to be
+                // unreachable, the gate failure that follows arrives with the reason
+                // already in the same run.log instead of costing another CI round.
+                fixtures.verifyReachable()
             }
             resolvedUrl = fixtures.resolve(scenario.url)
             record.requestedUrl = ProbeURL.strip(resolvedUrl)

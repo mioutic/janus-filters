@@ -176,6 +176,10 @@ final class SpikeRunner {
         started = Date()
         do {
             _ = try fixtures.start(requestedPort: arguments.fixturePort)
+            // Logged rather than awaited, as in ScenarioRunner: every spike probe is a
+            // fixture load, so an unreachable listener would fail all of them at once
+            // with nothing saying why.
+            fixtures.verifyReachable()
             let storeDirectory = try paths.prepareStore(keepExisting: false)
             compiler = try RuleListCompiler(storeDirectory: storeDirectory, log: log, clock: clock)
             guard let url = Bundle.main.url(forResource: "probe", withExtension: "js"),

@@ -58,14 +58,22 @@ final class FixtureServer {
         // requiredLocalEndpoint on a *listener* is not what that property is specified
         // for, and if the combination never reaches .ready the five second deadline
         // throws - which would mean the gate scenario and the whole spike suite produce
-        // no measurement at all. acceptLocalOnly stays: it is the supported way to keep
-        // the listener off the wider network, and the IPv4-only protocol option keeps
-        // the bind off ::1 so the http://127.0.0.1:<port>/ URLs resolve to it.
+        // no measurement at all. The IPv4-only protocol option keeps the bind off ::1
+        // so the http://127.0.0.1:<port>/ URLs resolve to it.
+        //
+        // acceptLocalOnly is deliberately NOT set. It restricts the listener to peers
+        // on a directly attached link, and loopback is not one of those. With it set,
+        // the WebKit networking process - a different process from this app - completed
+        // the handshake and was then dropped, which WKWebView reported as
+        // NSURLErrorDomain -1005 with no failing URL while this server recorded no
+        // request at all, so the gate could not tell a missing measurement from a
+        // working block. The listener is kept off the wider network in `accept`
+        // instead, by refusing any peer that is not loopback: a rule this file can
+        // state, log, and be visibly wrong about.
         let parameters = NWParameters.tcp
         parameters.allowLocalEndpointReuse = true
-        parameters.acceptLocalOnly = true
-        if let tcp = parameters.defaultProtocolStack.internetProtocol as? NWProtocolIP.Options {
-            tcp.version = .v4
+        if let ip = parameters.defaultProtocolStack.internetProtocol as? NWProtocolIP.Options {
+            ip.version = .v4
         }
 
         let endpointPort: NWEndpoint.Port =
@@ -158,13 +166,27 @@ final class FixtureServer {
     // MARK: - Connections
 
     private func accept(_ connection: NWConnection) {
+        // The peer check the NWParameters no longer do (see `start`). Anything that is
+        // not loopback is dropped before a byte of it is read.
+        guard FixtureServer.isLoopback(connection.endpoint) else {
+            log.detail("fixture refused non-loopback peer \(connection.endpoint)")
+            connection.cancel()
+            return
+        }
+        log.detail("fixture accepted \(connection.endpoint)")
+
         lock.lock()
         connections[ObjectIdentifier(connection)] = connection
         lock.unlock()
 
         connection.stateUpdateHandler = { [weak self] state in
             switch state {
-            case .failed, .cancelled:
+            case .failed(let error):
+                // A connection that reaches .failed never delivered a request, so
+                // without this line the only evidence left is an empty hit table.
+                self?.log.detail("fixture connection failed: \(error.localizedDescription)")
+                self?.forget(connection)
+            case .cancelled:
                 self?.forget(connection)
             default:
                 break
@@ -186,7 +208,8 @@ final class FixtureServer {
             guard let self = self else { return }
             var accumulated = buffer
             if let data = data { accumulated.append(data) }
-            if error != nil {
+            if let error = error {
+                self.log.detail("fixture receive error: \(error.localizedDescription)")
                 connection.cancel()
                 return
             }
@@ -260,7 +283,78 @@ final class FixtureServer {
         })
     }
 
+    // MARK: - Reachability
+
+    /// Proves the listener is reachable before the suite blames the filters for a page
+    /// that never loaded. Two legs, because they fail differently and the difference is
+    /// the entire diagnosis: the raw NWConnection answers "is anything serving this
+    /// port", and the URLSession request answers "does the URL loading system in this
+    /// process agree to talk to it" - an App Transport Security refusal appears only in
+    /// the second, and WKWebView reports one with the same -1005 a dropped connection
+    /// gets. Neither leg blocks: the result is logged, and the navigation that needs it
+    /// is a rule-list compile away.
+    func verifyReachable() {
+        guard port != 0, let endpointPort = NWEndpoint.Port(rawValue: port) else { return }
+        let path = "/probe-reachability"
+
+        let probe = NWConnection(host: .ipv4(.loopback), port: endpointPort, using: .tcp)
+        probe.stateUpdateHandler = { [weak self] state in
+            switch state {
+            case .ready:
+                let request = "GET \(path) HTTP/1.1\r\nHost: 127.0.0.1\r\n"
+                    + "Connection: close\r\n\r\n"
+                probe.send(content: Data(request.utf8), completion: .contentProcessed { _ in })
+                probe.receive(minimumIncompleteLength: 1, maximumLength: 256) { data, _, _, _ in
+                    let first = String(decoding: data ?? Data(), as: UTF8.self)
+                        .components(separatedBy: "\r\n").first ?? ""
+                    self?.log.line(
+                        "fixture reachability tcp=\(first.isEmpty ? "no response" : first)"
+                    )
+                    probe.cancel()
+                }
+            case .failed(let error):
+                self?.log.warn("fixture reachability tcp failed: \(error.localizedDescription)")
+                probe.cancel()
+            default:
+                break
+            }
+        }
+        probe.start(queue: queue)
+
+        guard let url = URL(string: "http://127.0.0.1:\(port)\(path)") else { return }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 5
+        // Ephemeral: nothing about a reachability check belongs in a cache that a later
+        // scenario could read.
+        let session = URLSession(configuration: .ephemeral)
+        session.dataTask(with: request) { [weak self] _, response, error in
+            if let error = error as NSError? {
+                self?.log.warn(
+                    "fixture reachability urlsession failed: \(error.domain) \(error.code) "
+                        + "detail=\(error.localizedDescription)"
+                )
+            } else if let http = response as? HTTPURLResponse {
+                self?.log.line("fixture reachability urlsession=\(http.statusCode)")
+            }
+            session.finishTasksAndInvalidate()
+        }.resume()
+    }
+
     // MARK: - Helpers
+
+    /// Loopback and nothing else. Written against the address rather than a string so
+    /// an IPv4-mapped IPv6 peer cannot spell its way past it.
+    private static func isLoopback(_ endpoint: NWEndpoint) -> Bool {
+        guard case let .hostPort(host, _) = endpoint else { return false }
+        switch host {
+        case .ipv4(let address):
+            return address.isLoopback
+        case .ipv6(let address):
+            return address.isLoopback || (address.asIPv4?.isLoopback ?? false)
+        default:
+            return false
+        }
+    }
 
     private static func headerTerminator(in data: Data) -> Data.Index? {
         let marker = Data("\r\n\r\n".utf8)
