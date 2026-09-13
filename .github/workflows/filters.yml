@@ -491,6 +491,18 @@ jobs:
               echo "</details>"
             fi
           } > "${RUNNER_TEMP}/release-notes.md"
+          # A draft release is not addressable by tag, so a rerun leaves a second
+          # draft carrying the same tag and later steps can resolve to either one.
+          # Seen 2026-09-13: the upload went to the previous run's draft while the
+          # verify step read the new, empty one. Remove stale drafts for this tag.
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+            --jq '.[] | select(.draft) | "\(.id) \(.tag_name)"' \
+            | while read -r stale_id stale_tag; do
+                if [ "${stale_tag}" = "${TAG}" ]; then
+                  echo "removing stale draft ${stale_id} for ${TAG}"
+                  gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/${stale_id}"
+                fi
+              done
           gh release create "${TAG}" \
             --draft \
             --target "${GITHUB_SHA}" \
