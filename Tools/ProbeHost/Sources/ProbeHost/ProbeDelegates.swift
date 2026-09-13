@@ -503,7 +503,15 @@ final class ProbeDelegate: NSObject, WKNavigationDelegate, WKUIDelegate, WKScrip
         // error state.
         guard nsError.code != NSURLErrorCancelled else { return }
         metrics.failure = (nsError.code, nsError.domain, clock.ms() - metrics.navigationStartMs)
-        log.warn("navigation failed: \(nsError.domain) \(nsError.code)")
+        // The failing URL and the description are what tell an ATS refusal apart from a
+        // real transport failure: WKWebView reports a policy refusal as -1005 ("network
+        // connection lost"), the same code a dropped connection gets, and without the
+        // description every such gate failure costs another CI round trip.
+        let failingURL = nsError.userInfo[NSURLErrorFailingURLStringKey] as? String ?? "-"
+        log.warn(
+            "navigation failed: \(nsError.domain) \(nsError.code) url=\(failingURL) "
+                + "detail=\(nsError.localizedDescription)"
+        )
         onDidFail?(nsError.code, nsError.domain)
     }
 
