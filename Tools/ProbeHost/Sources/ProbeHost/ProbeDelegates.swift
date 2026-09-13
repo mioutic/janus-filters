@@ -507,7 +507,7 @@ final class ProbeDelegate: NSObject, WKNavigationDelegate, WKUIDelegate, WKScrip
         // real transport failure: WKWebView reports a policy refusal as -1005 ("network
         // connection lost"), the same code a dropped connection gets, and without the
         // description every such gate failure costs another CI round trip.
-        let failingURL = nsError.userInfo[NSURLErrorFailingURLStringKey] as? String ?? "-"
+        let failingURL = nsError.userInfo[NSURLErrorFailingURLStringErrorKey] as? String ?? "-"
         log.warn(
             "navigation failed: \(nsError.domain) \(nsError.code) url=\(failingURL) "
                 + "detail=\(nsError.localizedDescription)"
