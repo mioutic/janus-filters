@@ -288,7 +288,7 @@ cosmetic rules before conversion).
     Mirror:      https://ublockorigin.github.io/uAssetsCDN/filters/privacy-removeparam.txt
     Mirror:      https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/privacy-removeparam.txt
     Flags:       trust=trusted, default=on, role=removeparam
-    Notes:       LinkCleaner only (DESIGN 3.2): contributes no content rules, only build/aux/linkcleaner.json.
+    Notes:       LinkCleaner only (DESIGN 3.2): contributes no content rules, only build/auxdata/linkcleaner.json.
 
 ### uBlock Origin quick fixes (ubo.quick-fixes)
 
