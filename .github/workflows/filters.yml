@@ -517,13 +517,13 @@ jobs:
           mkdir -p "${dir}"
           # A draft is not addressable by tag through the public endpoint, so the
           # release is found by listing (which includes drafts for this token).
-          release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+          release_id="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
             --jq ".[] | select(.tag_name == \"${TAG}\") | .id" | head -1)"
           if [ -z "${release_id}" ]; then
             echo "::error::draft release ${TAG} not found"
             exit 5
           fi
-          gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets?per_page=100" \
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets?per_page=100" \
             --jq '.[] | "\(.id)\t\(.name)"' | while IFS=$'\t' read -r asset_id name; do
               gh api -H "Accept: application/octet-stream" \
                 "repos/${GITHUB_REPOSITORY}/releases/assets/${asset_id}" > "${dir}/${name}"
@@ -585,7 +585,7 @@ jobs:
         run: |
           set -euo pipefail
           cutoff="$(date -u -d '7 days ago' +%s)"
-          gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
             --jq '.[] | select(.draft == true) | "\(.id)\t\(.tag_name)\t\(.created_at)"' \
             | while IFS=$'\t' read -r id tag created; do
                 case "${tag}" in filters-*) ;; *) continue ;; esac
