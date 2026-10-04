@@ -372,6 +372,27 @@
       "role": "popup-index"
     },
     {
+      "id": "hagezi.popupads",
+      "title": "HaGeZi's Pop-Up Ads",
+      "url": "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/popupads.txt",
+      "mirrors": [
+        "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/popupads.txt",
+        "https://gitlab.com/hagezi/mirror/-/raw/main/dns-blocklists/adblock/popupads.txt",
+        "https://codeberg.org/hagezi/mirror2/raw/branch/main/dns-blocklists/adblock/popupads.txt"
+      ],
+      "format": "adblock",
+      "family": "net.ads",
+      "trust": "untrusted",
+      "default": true,
+      "required": false,
+      "license": "GPL-3.0-only",
+      "licenseUrl": "https://github.com/hagezi/dns-blocklists/blob/main/LICENSE",
+      "homepage": "https://github.com/hagezi/dns-blocklists",
+      "attribution": "HaGeZi's Pop-Up Ads DNS blocklist (c) HaGeZi and the dns-blocklists contributors, GPL-3.0.",
+      "notes": "Popup-index only (PIPELINE 9.4): about 48k pop-up, pop-under and malicious-redirect ad domains, the destinations the app's PopupGate rule 2 and RedirectShield (a) look up. A DNS list blocks whole domains everywhere, so it is deliberately not a content-rule source; generic @@$popup exceptions from the trusted lists still remove entries.",
+      "role": "popup-index"
+    },
+    {
       "id": "janus.sitefix",
       "title": "Janus site-fix list",
       "url": "file:config/sitefix.txt",

@@ -10,7 +10,7 @@ import {
   applyTransform,
 } from "../lib/alias-transforms.mjs";
 import { getModifier, hasModifier, parseRule, serialiseRule } from "../lib/rule.mjs";
-import { etldPlusOne } from "../lib/psl.mjs";
+import { etldPlusOne, isIpAddress, isSubdomainOf, publicSuffix } from "../lib/psl.mjs";
 import { matchesUrl, regexToProbeUrls } from "../lib/match.mjs";
 
 const MAX_SAMPLES_PER_CAUSE = 20;
@@ -157,15 +157,98 @@ function translateRedirect(rule, alias, record, line) {
   return { keep: true, text };
 }
 
-function addPopupDomains(rule, popupDomains) {
-  if (rule.host) {
-    const key = etldPlusOne(rule.host);
-    if (key) popupDomains.add(key);
+// PIPELINE 9.4. The app denies a popup silently, before any scoring, when the
+// DESTINATION host or a parent of it is in the index (DESIGN 4.3 rule 2), so an
+// entry must name a host that is an ad destination from every page. Three rule
+// shapes do not, and used to leak in: the `$domain=` values (those are the pages
+// that open the popup, not where it goes), a host whose rule is scoped to some
+// source sites (`||t.co^$popup,domain=hltv.org` is not "t.co is an ad"), and the
+// host of a path rule (`||google.com/favicon.ico$popup` is not "google.com is an
+// ad"). Hosts are kept exact, not widened to eTLD+1: the app's lookup already
+// walks parents, and widening turned `||ads.example.com^` into all of example.com.
+
+/** Modifiers that leave a `$popup` rule a plain "this host is a popup ad". */
+const POPUP_INDEX_MODIFIERS = new Set([
+  "popup", "third-party", "3p", "important", "domain", "from", "match-case",
+]);
+
+/** `||host^`, `||host`, `|https://host/` and friends: a host and nothing after it. */
+const HOST_ONLY_PATTERN = /^(?:\|\||\|?(?:https?:\/\/)?)[a-z0-9._-]+(?:\^|\/)?\|?$/i;
+
+function isIndexableHost(host) {
+  if (!host || !host.includes(".")) return false;
+  // `||109.248.` names an address range, not a host; only a full IPv4 address is one.
+  if (/^[\d.]+$/.test(host)) return isIpAddress(host);
+  if (!/^[a-z0-9_-]+(\.[a-z0-9_-]+)+$/.test(host)) return false;
+  if (!/[a-z]/.test(host.slice(host.lastIndexOf(".") + 1))) return false;
+  // A bare public suffix (`co.uk`) would deny every popup under it.
+  return publicSuffix(host) !== host;
+}
+
+function isSiteScoped(rule) {
+  return rule.domains.length > 0;
+}
+
+/**
+ * The host a rule names as a popup destination on every site, or null.
+ * `requirePopup` is false for the popup-only lists (role `popup-index`), whose every
+ * rule is a popup rule by construction.
+ * @returns {string|null}
+ */
+export function popupIndexHost(rule, { requirePopup = true } = {}) {
+  if (rule.type !== "network" || rule.exception) return null;
+  if (requirePopup && !rule.modifiers.some((m) => m.name === "popup" && !m.negated)) {
+    return null;
   }
-  for (const domain of rule.domains) {
-    const key = etldPlusOne(domain);
-    if (key) popupDomains.add(key);
+  // A negated modifier narrows the rule (`~third-party` is first-party only), so none is accepted.
+  if (rule.modifiers.some((m) => !POPUP_INDEX_MODIFIERS.has(m.name) || (m.negated && m.name !== "domain"))) {
+    return null;
   }
+  if (isSiteScoped(rule)) return null;
+  if (!HOST_ONLY_PATTERN.test(rule.pattern)) return null;
+  return isIndexableHost(rule.host) ? rule.host : null;
+}
+
+/**
+ * The host a `@@||host^$popup` exception allows popups to on every site, or null.
+ * Only the same shape as an entry counts. A path exception allows a few URLs under an
+ * ad network (`@@||exoclick.com/privacy-and-cookies-policy/*$popup`) and a narrowed
+ * one (`~third-party`) lets a host open itself; letting either remove the entry
+ * would take exoclick.com, doubleclick.net and the like out of the index for the sake
+ * of one page.
+ * @returns {string|null}
+ */
+export function popupExceptionHost(rule) {
+  if (rule.type !== "network" || !rule.exception) return null;
+  return popupIndexHost({ ...rule, exception: false });
+}
+
+/**
+ * The index from the collected hosts: an entry goes when an exception or a
+ * `$badfilter` allows popups to it, to a parent of it, or to a host under it -
+ * the app's parent walk would otherwise deny the excepted host through the entry.
+ */
+export function finalisePopupIndex(hosts, allowed) {
+  const allow = [...allowed];
+  return sortStrings(
+    [...hosts].filter((host) => !allow.some((other) => isSubdomainOf(host, other) || isSubdomainOf(other, host))),
+  );
+}
+
+function collectPopupRule(rule, popup, options) {
+  if (hasModifier(rule, "badfilter")) {
+    const neutral = { ...rule, modifiers: rule.modifiers.filter((m) => m.name !== "badfilter") };
+    const host = popupIndexHost(neutral, options);
+    if (host) popup.allowed.add(host);
+    return;
+  }
+  const exception = popupExceptionHost(rule);
+  if (exception) {
+    popup.allowed.add(exception);
+    return;
+  }
+  const host = popupIndexHost(rule, options);
+  if (host) popup.hosts.add(host);
 }
 
 /** $removeparam -> LinkCleaner. PIPELINE 9.3. */
@@ -248,7 +331,7 @@ export async function run(ctx) {
   await ensureDir(ctx.paths.aux);
 
   const linkcleaner = { global: new Set(), byDomain: new Map(), regex: [] };
-  const popupDomains = new Set();
+  const popup = { hosts: new Set(), allowed: new Set() };
   const sitefixEntries = [];
   const candidates = [];
   const perList = {};
@@ -280,7 +363,7 @@ export async function run(ctx) {
         continue;
       }
       if (list.role === "popup-index") {
-        if (rule.type === "network") addPopupDomains(rule, popupDomains);
+        if (rule.type === "network") collectPopupRule(rule, popup, { requirePopup: false });
         recordDrop(record, line, text, "role.popup-index-only");
         continue;
       }
@@ -301,9 +384,7 @@ export async function run(ctx) {
       if (!csp.keep) continue;
       const removeparam = translateRemoveParam(current, linkcleaner, record, line);
       if (!removeparam.keep) continue;
-      if (hasModifier(current, "popup") && !current.exception) {
-        addPopupDomains(current, popupDomains);
-      }
+      if (hasModifier(current, "popup")) collectPopupRule(current, popup);
       const redirect = translateRedirect(current, alias, record, line);
       if (redirect.text) current = { ...parseRule(redirect.text), text: redirect.text };
 
@@ -362,9 +443,10 @@ export async function run(ctx) {
       .sort((a, b) => byCodeUnit(a.pattern + a.domains.join("|"), b.pattern + b.domains.join("|"))),
   });
 
+  const popupDomains = finalisePopupIndex(popup.hosts, popup.allowed);
   await writeJson(ctx.paths.popupIndex, {
     schemaVersion: 1,
-    domains: sortStrings([...popupDomains]),
+    domains: popupDomains,
   });
 
   const cspEntries = sitefixEntries.sort((a, b) =>
@@ -390,14 +472,15 @@ export async function run(ctx) {
       domains: linkcleaner.byDomain.size,
       regex: linkcleaner.regex.length,
     },
-    popupDomains: popupDomains.size,
+    popupDomains: popupDomains.length,
+    popupExcepted: popup.hosts.size - popupDomains.length,
     csp: cspEntries.length,
     surrogateCandidates: candidates.length,
     perList,
   };
   ctx.log.info("done", {
     csp: cspEntries.length,
-    popupDomains: popupDomains.size,
+    popupDomains: popupDomains.length,
     candidates: candidates.length,
   });
   return summary;

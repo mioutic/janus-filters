@@ -6,7 +6,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
-import { lookupAlias, surrogateProbes, translateScriptlet, run as runTranslate } from "../src/stages/translate.mjs";
+import {
+  finalisePopupIndex,
+  lookupAlias,
+  popupExceptionHost,
+  popupIndexHost,
+  surrogateProbes,
+  translateScriptlet,
+  run as runTranslate,
+} from "../src/stages/translate.mjs";
 import { run as runFetch } from "../src/stages/fetch.mjs";
 import { run as runPreprocess } from "../src/stages/preprocess.mjs";
 import { run as runTrustgate } from "../src/stages/trustgate.mjs";
@@ -210,17 +218,20 @@ test("the stage produces the three payloads and the surrogate candidates", async
       pattern: "^ad_[0-9]+$",
     });
 
+    // Destinations only. host.example and torrent.example are $domain= SOURCES of
+    // popup rules and used to be listed, which made the app deny popups TO them.
     const popups = await readJson(path.join(buildDir, "auxdata", "popup-index.json"));
     assert.deepEqual(popups, {
       schemaVersion: 1,
       domains: [
         "another-popup.example",
-        "host.example",
+        "kept-popup.example",
         "popads.example",
         "popunder.example",
-        "torrent.example",
+        "sub.dns-popup.example",
       ],
     });
+    assert.equal(summary.popupDomains, 5);
 
     const sitefix = await readJson(path.join(buildDir, "auxdata", "sitefix.json"));
     assert.deepEqual(sitefix.entries, [
@@ -269,4 +280,47 @@ test("the stage produces the three payloads and the surrogate candidates", async
   } finally {
     await removeDir(buildDir);
   }
+});
+
+test("the popup index takes a destination host, never a source site or a path (PIPELINE 9.4)", () => {
+  // Real rules from the 2026-10 default set that put google.com, facebook.com, t.co,
+  // bit.ly and instagram.com into the index, where the app's PopupGate rule 2 would
+  // have denied every popup to them silently.
+  for (const text of [
+    "||google.com/favicon.ico$popup",
+    "||facebook.com/ads/ig_redirect/$domain=instagram.com,popup",
+    "||t.co^$domain=hltv.org,popup",
+    "||bit.ly^$domain=dexerto.com|eteknix.com,popup",
+    "$popup,third-party,domain=torrent.example",
+    "||109.248.$popup",
+    "||co.uk^$popup",
+    "||site.example^$popup,~third-party",
+    "||ads.example^$popup,redirect=noopjs",
+    "||ads.example^$script",
+    "/^https?:\/\/ads\./$popup",
+  ]) {
+    assert.equal(popupIndexHost(rule(text)), null, text);
+  }
+  assert.equal(popupIndexHost(rule("||popads.net^$popup")), "popads.net");
+  assert.equal(popupIndexHost(rule("||ads.example.com^$popup,third-party")), "ads.example.com");
+  assert.equal(popupIndexHost(rule("||popads.net^$popup,domain=~safe.example")), "popads.net");
+  assert.equal(popupIndexHost(rule("|https://pop.example/$popup")), "pop.example");
+  assert.equal(popupIndexHost(rule("||142.91.159.107^$popup")), "142.91.159.107");
+  // A popup-only list (HaGeZi Pop-Up Ads) writes plain DNS rules.
+  assert.equal(popupIndexHost(rule("||ads.dns.example^")), null);
+  assert.equal(popupIndexHost(rule("||ads.dns.example^"), { requirePopup: false }), "ads.dns.example");
+
+  assert.equal(popupExceptionHost(rule("@@||accounts.google.com^$popup")), "accounts.google.com");
+  assert.equal(popupExceptionHost(rule("@@||exoclick.com/privacy-and-cookies-policy/*$popup")), null);
+  assert.equal(popupExceptionHost(rule("@@||powvideo.net/$popup,~third-party")), null);
+  assert.equal(popupExceptionHost(rule("@@||instagram.com^$domain=msn.com,popup")), null);
+  assert.equal(popupExceptionHost(rule("@@||example.com^$document")), null);
+
+  assert.deepEqual(
+    finalisePopupIndex(
+      new Set(["google.com", "ads.example", "x.allowed.example", "popads.net"]),
+      new Set(["accounts.google.com", "allowed.example", "other.example"]),
+    ),
+    ["ads.example", "popads.net"],
+  );
 });

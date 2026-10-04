@@ -290,7 +290,8 @@ uAssets `filters`, `quick-fixes`, `unbreak`, `privacy`, `badware`, `annoyances-c
 `urlhaus-filter-ag-online.txt`; AdGuard Popups `19.txt`, Cookie Notices `18.txt`, Mobile App
 Banners `20.txt`, Other Annoyances `21.txt`; EasyList Notifications; `privacy-removeparam.txt`
 (role `removeparam`); the Janus site-fix list (role `sitefix`); the popup-domain index (role
-`popup-index`, built from the EasyList popup lists plus every `$popup` rule in the whole set).
+`popup-index`, built from the EasyList popup lists and HaGeZi's Pop-Up Ads plus the global
+`$popup` destinations in the whole set, section 9.4).
 
 **Opt-in set** (`"default": false`, `"required": false`): AdGuard Social `4.txt`, EasyList
 Social, AdGuard Widgets `22.txt`, EasyList Newsletters, EasyList Chat, AdGuard Tracking
@@ -618,8 +619,25 @@ top-level navigations (DESIGN 3.8, "top-level LinkCleaner").
 
 ### 9.4 The popup-domain index
 
-`build/auxdata/popup-index.json` holds every domain carrying a `$popup` rule anywhere in the set,
-plus the domains from the EasyList popup lists, sorted, deduped, punycode:
+`build/auxdata/popup-index.json` holds the hosts that are popup **destinations** on every site,
+sorted, deduped, lower-case punycode, each an exact host (the app's lookup walks parent labels):
+
+- from any list, a non-exception `$popup` rule whose pattern is a bare host (`||host^`,
+  `||host`, `|https://host/`), with no positive `$domain=`/`$from=`, and no modifier besides
+  `popup`, `third-party`/`3p`, `important`, `match-case` and a negated-only `domain`;
+- from a list with role `popup-index` (the EasyList popup lists, HaGeZi's Pop-Up Ads), every
+  network rule of that shape, `$popup` or not, because the whole list is popup destinations.
+
+Never indexed: the `$domain=` values of a popup rule (those are the pages that open the popup),
+the host of a rule scoped to some source sites (`||t.co^$popup,domain=hltv.org`), the host of a
+path rule (`||google.com/favicon.ico$popup`), an address prefix (`||109.248.`) and a bare public
+suffix. The app denies a popup to an indexed host silently, before any scoring (DESIGN 4.3 rule
+2), and RedirectShield refuses a tapped subframe redirect to one (DESIGN 4.4 a), so a wrong entry
+costs the owner a popup or a link with no explanation while a missing one only falls through to
+the score. For the same reason an entry is removed when a `@@` exception of the same shape
+(`@@||host^$popup`, not site-scoped), or a `$badfilter` of such a rule, names it, a parent of it
+or a host under it. Site-scoped, path and narrowed (`~third-party`) exceptions leave the entry
+alone: `@@||exoclick.com/privacy-and-cookies-policy/*$popup` allows one page, not the network.
 
 ```json
 { "schemaVersion": 1, "domains": ["example.com", "popads.net"] }

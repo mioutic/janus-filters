@@ -27,7 +27,7 @@ distributed under the same terms, with attribution preserved here.
 Filter lists
 ------------
 
-27 lists, sorted by id. "default" means the list is on for a fresh install;
+28 lists, sorted by id. "default" means the list is on for a fresh install;
 "trust" is the CI trust level (an untrusted list is reduced to network and
 cosmetic rules before conversion).
 
@@ -199,6 +199,19 @@ cosmetic rules before conversion).
     Mirror:      https://secure.fanboy.co.nz/fanboy-social.txt
     Flags:       trust=untrusted, default=off, role=rules
     Notes:       Opt-in.
+
+### HaGeZi's Pop-Up Ads (hagezi.popupads)
+
+    Attribution: HaGeZi's Pop-Up Ads DNS blocklist (c) HaGeZi and the dns-blocklists contributors, GPL-3.0.
+    Licence:     GPL-3.0-only
+    Licence URL: https://github.com/hagezi/dns-blocklists/blob/main/LICENSE
+    Homepage:    https://github.com/hagezi/dns-blocklists
+    Source:      https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/popupads.txt
+    Mirror:      https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/popupads.txt
+    Mirror:      https://gitlab.com/hagezi/mirror/-/raw/main/dns-blocklists/adblock/popupads.txt
+    Mirror:      https://codeberg.org/hagezi/mirror2/raw/branch/main/dns-blocklists/adblock/popupads.txt
+    Flags:       trust=untrusted, default=on, role=popup-index
+    Notes:       Popup-index only (PIPELINE 9.4): about 48k pop-up, pop-under and malicious-redirect ad domains, the destinations the app's PopupGate rule 2 and RedirectShield (a) look up. A DNS list blocks whole domains everywhere, so it is deliberately not a content-rule source; generic @@$popup exceptions from the trusted lists still remove entries.
 
 ### Janus site-fix list (janus.sitefix)
 

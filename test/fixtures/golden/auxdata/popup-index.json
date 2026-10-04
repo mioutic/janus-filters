@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "domains": [
     "another-popup.example",
-    "host.example",
+    "kept-popup.example",
     "popads.example",
     "popunder.example",
-    "torrent.example"
+    "sub.dns-popup.example"
   ]
 }

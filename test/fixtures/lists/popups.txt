@@ -2,3 +2,19 @@
 ||popunder.example^$popup
 ||another-popup.example^$popup,third-party
 $popup,domain=host.example
+! A DNS-style entry: the popup-only role makes every host rule a popup destination.
+||sub.dns-popup.example^
+! Not destinations: a path, a rule scoped to source sites, an address prefix, a suffix.
+||path-popup.example/landing$popup
+||scoped-popup.example^$popup,domain=source.example
+||109.248.$popup
+||co.uk^$popup
+! A generic @@||host^$popup exception removes the entry, its parents and its children.
+||excepted-popup.example^$popup
+||child.allowed-parent.example^$popup
+@@||excepted-popup.example^$popup
+@@||allowed-parent.example^$popup
+! A site-scoped or a path exception does not: the entry stays.
+||kept-popup.example^$popup
+@@||kept-popup.example^$popup,domain=partner.example
+@@||kept-popup.example/privacy-policy/*$popup
