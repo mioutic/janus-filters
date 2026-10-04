@@ -27,6 +27,6 @@ jobs:
                  -f target_commitish="${GITHUB_SHA}" -F draft=true --jq .id) || echo "raw POST failed"
           [ -n "${id:-}" ] && gh api -X DELETE "repos/${REPO}/releases/${id}"
           echo "--- gh release create"
-          GH_DEBUG=api gh release create "debug-cli-${GITHUB_RUN_ID}" --draft --target "${GITHUB_SHA}" \
-            --title debug --notes debug 2>&1 | grep -vi authorization | tail -60 || true
-          gh release delete "debug-cli-${GITHUB_RUN_ID}" --yes || true
+          GH_DEBUG=api gh release create -R "${REPO}" "debug-cli-${GITHUB_RUN_ID}" --draft --target "${GITHUB_SHA}" \
+            --title debug --notes debug 2>&1 | grep -vi authorization | grep -E "^* Request|^< HTTP|^{|message|^> (POST|GET)|Resource|documentation" | head -60 || true
+          gh release delete -R "${REPO}" "debug-cli-${GITHUB_RUN_ID}" --yes || true
