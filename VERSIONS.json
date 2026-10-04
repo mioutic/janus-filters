@@ -127,9 +127,9 @@
     "cacheWarnDays": 7,
     "cacheFailDays": 14,
     "probe": {
-      "jobTimeoutMin": 60,
+      "jobTimeoutMin": 70,
       "spikeJobTimeoutMin": 40,
-      "suiteBudgetMin": 30,
+      "suiteBudgetMin": 40,
       "artifactRetentionDays": 14,
       "trendRetentionDays": 90,
       "spikeRetentionDays": 90,
