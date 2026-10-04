@@ -311,7 +311,7 @@ test("the launch contract argv is exactly what 01-probehost.md section 2.1 decla
     "-ProbeOut",
     "probe/out/selftest-local-blocked-1",
     "-ProbeStepTimeoutMs",
-    "15000",
+    "45000",
     "-ProbeBudgetMs",
     "240000",
     "-ProbeScreenshots",
