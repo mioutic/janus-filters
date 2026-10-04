@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Temporary: why does `gh release create` get HTTP 403 in the publish job since
+# runner image 20260927? Removed again in the commit that fixes it.
+name: release-debug
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Probe the releases API
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -uo pipefail
+          gh --version
+          echo "--- list"
+          gh api "repos/${REPO}/releases?per_page=5" --jq '.[].tag_name' || echo "list failed"
+          echo "--- raw POST"
+          id=$(gh api -X POST "repos/${REPO}/releases" -f tag_name=debug-raw-${GITHUB_RUN_ID} \
+                 -f target_commitish="${GITHUB_SHA}" -F draft=true --jq .id) || echo "raw POST failed"
+          [ -n "${id:-}" ] && gh api -X DELETE "repos/${REPO}/releases/${id}"
+          echo "--- gh release create"
+          GH_DEBUG=api gh release create "debug-cli-${GITHUB_RUN_ID}" --draft --target "${GITHUB_SHA}" \
+            --title debug --notes debug 2>&1 | grep -vi authorization | tail -60 || true
+          gh release delete "debug-cli-${GITHUB_RUN_ID}" --yes || true
