@@ -507,11 +507,22 @@ jobs:
                   gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/${stale_id}"
                 fi
               done
-          gh release create "${TAG}" \
+          # GitHub answers 403 "Resource not accessible by integration" when the
+          # target is not main's head and main has since changed a workflow file:
+          # the tag would point at different workflows, which needs the `workflows`
+          # permission this token never gets. Seen 2026-10-04 (run 37239893760),
+          # when a workflow commit landed mid-run. Say so instead of a bare 403.
+          if ! gh release create "${TAG}" \
             --draft \
             --target "${GITHUB_SHA}" \
             --title "Filters ${VERSION}" \
-            --notes-file "${RUNNER_TEMP}/release-notes.md"
+            --notes-file "${RUNNER_TEMP}/release-notes.md"; then
+            head=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_REF_NAME}" --jq .sha || echo unknown)
+            if [ "${head}" != "${GITHUB_SHA}" ]; then
+              echo "::error::${GITHUB_REF_NAME} moved to ${head} during this run; if that commit changed .github/workflows, GitHub refuses a release on ${GITHUB_SHA}. Dispatch a new run."
+            fi
+            exit 1
+          fi
 
       - name: Upload the assets
         env:
