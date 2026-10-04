@@ -16,6 +16,7 @@ import {
   ciContext,
   computeDelta,
   evaluateExpect,
+  gateFailureReason,
   median,
   mergeBundle,
   mergeCompile,
@@ -363,6 +364,49 @@ test("the gate passes only when it blocked, showed nothing, loaded and the SPI f
     }),
   );
   assert.equal(noSpi.passed, null, "an unknown SPI is not a pass");
+});
+
+test("a gate the app refused says why, instead of blocked=null spiFired=null", () => {
+  // Shaped like live run 36417913525: the published bundle was 369 h old, ProbeHost
+  // refused it at contract step 9 and exited 65 before loading anything.
+  const gateScenario = scenarioStub({
+    id: "selftest-local",
+    gate: true,
+    stable: true,
+    url: "fixture:/selftest.html",
+    payload: { expect: { blockedMin: 1, domVisibleMax: 0, allowedMustLoad: true } },
+  });
+  const staleRun = {
+    schemaVersion: 1,
+    run: { id: "selftest-local-blocked-1", suite: "scenario" },
+    contract: { ok: false, failedStep: 9, failureReason: "issuedAt is 369h old, the limit is 336h" },
+    pageState: { state: null },
+    harness: {
+      status: "bundle",
+      exitCode: 65,
+      errors: [
+        "contract step 9 age failed: issuedAt is 369h old, the limit is 336h",
+        "stale-bundle: contract step 9 (age): issuedAt is 369h old, the limit is 336h",
+      ],
+    },
+  };
+  const results = [
+    { ...okResult("selftest-local", "blocked", 1, staleRun), exitCode: 65, pageState: null },
+    { ...okResult("selftest-local", "none", 1, { ...staleRun, harness: { exitCode: 65, errors: [] } }), exitCode: 65 },
+  ];
+  const gate = mergeGate(mergeScenario({ scenario: gateScenario, results }));
+  assert.notEqual(gate.passed, true);
+  assert.equal(
+    gateFailureReason(gate, results),
+    "gate selftest-local did not pass: " +
+      "blocked: app exit 65: stale-bundle: contract step 9 (age): issuedAt is 369h old, the limit is 336h; " +
+      "none: app exit 65: contract step 9: issuedAt is 369h old, the limit is 336h",
+  );
+
+  // A gate that ran to the end and measured nothing keeps the numbers.
+  const measured = [okResult("selftest-local", "blocked", 1, makeRun({ blocked: 0, visible: 1 }))];
+  const missed = mergeGate(mergeScenario({ scenario: gateScenario, results: measured }));
+  assert.match(gateFailureReason(missed, measured), /^gate selftest-local did not pass: (?!.*app exit)/);
 });
 
 test("the report totals, viewport and strict violations", () => {

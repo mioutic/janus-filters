@@ -158,13 +158,15 @@ jobs:
           PROBE_RUNTIME: ${{ inputs.runtime || 'all' }}
         run: |
           set -uo pipefail
+          # The step shell is `bash -e`; see the same step in live.yml for why the exit
+          # code is captured with `|| code=$?` rather than read after a bare command.
+          code=0
           node Tools/ProbeRunner/run.mjs \
             --app "${PROBE_APP}" \
             --suite spike \
             --out "${PROBE_DIR}" \
             --run-id "${PROBE_RUN_ID}" \
-            --runtime "${PROBE_RUNTIME}"
-          code=$?
+            --runtime "${PROBE_RUNTIME}" || code=$?
           echo "exit-code=${code}" >> "$GITHUB_OUTPUT"
           echo "runner exit ${code}"
           exit 0

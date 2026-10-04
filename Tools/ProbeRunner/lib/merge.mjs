@@ -490,6 +490,34 @@ export function mergeGate(row) {
 }
 
 /**
+ * Why the gate did not pass, in words a reader can act on. When the app itself
+ * refused the run (a bundle that failed contract verification is exit 65, a crash is
+ * another non-zero exit) there are no numbers to quote, and "blocked=null
+ * spiFired=null" hides the one line that explains it. The app's own last harness
+ * error comes first then; the measured misses, or the numbers, only when the app
+ * ran to the end.
+ */
+export function gateFailureReason(gate, results = []) {
+  const id = gate?.id ?? "selftest";
+  const refused = [];
+  for (const result of results) {
+    const exit = result?.exitCode ?? result?.runJson?.harness?.exitCode ?? null;
+    if (exit === null || exit === 0) continue;
+    const errors = result?.runJson?.harness?.errors ?? [];
+    const contract = result?.runJson?.contract;
+    const detail =
+      errors.at(-1) ??
+      (contract?.ok === false
+        ? `contract step ${contract.failedStep}: ${contract.failureReason}`
+        : (result?.reason ?? result?.status ?? "no detail"));
+    refused.push(`${result?.mode ?? "?"}: app exit ${exit}: ${detail}`);
+  }
+  if (refused.length > 0) return `gate ${id} did not pass: ${refused.join("; ")}`;
+  const misses = (gate?.misses ?? []).join("; ");
+  return `gate ${id} did not pass: ${misses || `blocked=${gate?.blocked} spiFired=${gate?.spiFired}`}`;
+}
+
+/**
  * Did the one URL that must load actually load? The fixture server's hit count and the
  * page's own flag are the evidence; a run without a fixture block falls back to "the
  * navigation finished", which is all there is for a live scenario.

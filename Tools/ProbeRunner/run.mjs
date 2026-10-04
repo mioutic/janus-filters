@@ -31,7 +31,7 @@ import {
 } from "./lib/device.mjs";
 import { containerPaths, isInternalFailure, retryItem, runWorkItem, shouldRetry } from "./lib/launch.mjs";
 import { createRunnerLog, relativise } from "./lib/log.mjs";
-import { buildReport, ciContext, mergeGate, mergeScenario, strictViolations } from "./lib/merge.mjs";
+import { buildReport, ciContext, gateFailureReason, mergeGate, mergeScenario, strictViolations } from "./lib/merge.mjs";
 import { createSimctl, macosVersion } from "./lib/simctl.mjs";
 import { buildWorkItems, loadScenarioDoc, materialiseScenario, selectScenarios } from "./lib/scenarios.mjs";
 
@@ -263,9 +263,10 @@ async function runScenarioSuite({ opts, doc, simctl, list, log, outRoot, started
         log.warn("gate not enforced", { reason: "mode blocked was not requested" });
       } else if (gate?.passed !== true) {
         ctx.harnessOk = false;
-        ctx.harnessReason = `gate ${gate?.id ?? "selftest"} did not pass: ${
-          (gate?.misses ?? []).join("; ") || `blocked=${gate?.blocked} spiFired=${gate?.spiFired}`
-        }`;
+        ctx.harnessReason = gateFailureReason(
+          gate,
+          ctx.results.filter((result) => result.scenarioId === gateScenario.id),
+        );
         ctx.aborted = "gate failed";
         log.error("gate failed", { reason: ctx.harnessReason });
       } else {

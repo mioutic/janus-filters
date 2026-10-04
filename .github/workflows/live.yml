@@ -224,8 +224,12 @@ jobs:
           if [ -n "${PROBE_SCENARIOS}" ]; then args+=(--only "${PROBE_SCENARIOS}"); fi
           if [ "${PROBE_STRICT}" = "true" ]; then args+=(--strict); fi
           if [ "${PROBE_EGRESS}" = "true" ]; then args+=(--record-egress); fi
-          node Tools/ProbeRunner/run.mjs "${args[@]}"
-          code=$?
+          # GitHub runs this script as `bash -e {0}`, and `set -uo pipefail` does not undo
+          # the -e: a bare non-zero runner exit ended the step before code=$? ran, the output
+          # stayed empty, and Outcome reported "the suite did not run" for a suite that had
+          # run and refused a stale bundle (live run 36417913525, exit 4).
+          code=0
+          node Tools/ProbeRunner/run.mjs "${args[@]}" || code=$?
           echo "exit-code=${code}" >> "$GITHUB_OUTPUT"
           echo "runner exit ${code}"
           exit 0
