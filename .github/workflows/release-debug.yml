@@ -10,23 +10,41 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    environment: filters-release
     permissions:
       contents: write
+      actions: read
     steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Reports of run 37239893760
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: janus-filters-reports-37239893760
+          path: build/reports
+          run-id: 37239893760
+          github-token: ${{ github.token }}
       - name: Probe the releases API
         env:
           GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
         run: |
           set -uo pipefail
-          gh --version
-          echo "--- list"
-          gh api "repos/${REPO}/releases?per_page=5" --jq '.[].tag_name' || echo "list failed"
-          echo "--- raw POST"
-          id=$(gh api -X POST "repos/${REPO}/releases" -f tag_name=debug-raw-${GITHUB_RUN_ID} \
-                 -f target_commitish="${GITHUB_SHA}" -F draft=true --jq .id) || echo "raw POST failed"
-          [ -n "${id:-}" ] && gh api -X DELETE "repos/${REPO}/releases/${id}"
-          echo "--- gh release create"
-          GH_DEBUG=api gh release create -R "${REPO}" "debug-cli-${GITHUB_RUN_ID}" --draft --target "${GITHUB_SHA}" \
-            --title debug --notes debug 2>&1 | grep -vi authorization | grep -E "^* Request|^< HTTP|^{|message|^> (POST|GET)|Resource|documentation" | head -60 || true
-          gh release delete -R "${REPO}" "debug-cli-${GITHUB_RUN_ID}" --yes || true
+          ls -la build/reports
+          try() {
+            local name="$1"; shift
+            echo "=== ${name}"
+            GH_DEBUG=api gh release create "debug-${name}-${GITHUB_RUN_ID}" --draft --target "${GITHUB_SHA}" \
+              --title "Filters debug" "$@" 2>&1 | grep -E "^< HTTP/|HTTP 4|Resource|\"message\"" | head -5
+            gh release delete "debug-${name}-${GITHUB_RUN_ID}" --yes >/dev/null 2>&1 || true
+          }
+          try plain --notes debug
+          head -c 40000 build/reports/dropped.md > "${RUNNER_TEMP}/full.md"
+          try dropped40k --notes-file "${RUNNER_TEMP}/full.md"
+          head -c 4000 build/reports/dropped.md > "${RUNNER_TEMP}/small.md"
+          try dropped4k --notes-file "${RUNNER_TEMP}/small.md"
+          head -c 1000 build/reports/dropped.md > "${RUNNER_TEMP}/tiny.md"
+          try dropped1k --notes-file "${RUNNER_TEMP}/tiny.md"
+          echo "=== head of dropped.md"
+          head -c 1000 build/reports/dropped.md
